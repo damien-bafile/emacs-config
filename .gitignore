@@ -1,0 +1,22 @@
+# Straight.el build directory and bootstrap file
+straight/
+bootstrap.el
+
+# Auto‑generated tangled files (if you only want to keep the .org source)
+config.el
+
+# Emacs compiled lisp
+*.elc
+
+# Auto‑save and backup files
+*~
+\#*\#
+.\#*
+
+# Session / desktop files
+.emacs.desktop
+.emacs.desktop.lock
+
+# Personal / sensitive files
+authinfo
+authinfo.gpg

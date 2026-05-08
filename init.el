@@ -1,0 +1,38 @@
+;; init.el
+
+;; Suppress byte-compiler noise from third-party packages
+(setq byte-compile-warnings '(not docstrings docstrings-control-chars
+                                  obsolete noruntime make-local))
+
+;; Straight.el bootstrap
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 6))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Load new Org IMMEDIATELY before org-babel-load-file triggers the built-in version
+(straight-use-package 'org)
+(require 'org)
+
+;; Fix for magit transient dependency
+(straight-use-package 'transient)
+(require 'transient)
+
+;; Prevent "Wrong type argument: bufferp" error from delayed warnings
+(defun display-delayed-warnings-safe (&rest args)
+  "Wrap display-delayed-warnings to prevent bufferp errors."
+  (ignore-errors
+    (apply args)))
+(advice-add 'display-delayed-warnings :around #'display-delayed-warnings-safe)
+
+;; Now it's safe to load the literate config
+(org-babel-load-file
+ (expand-file-name "config.org" user-emacs-directory))
