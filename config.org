@@ -1,3 +1,8 @@
+* File Header
+#+begin_src emacs-lisp :padline no
+;;; config.el --- Emacs configuration -*- lexical-binding: t -*-
+#+end_src
+
 * Mode Variables
 #+begin_src emacs-lisp
 (setq enable-mode 1
@@ -11,6 +16,21 @@
 (straight-use-package 'org)
 (require 'org)
 (straight-use-package 'transient)
+#+end_src
+
+* Server
+#+begin_src emacs-lisp
+(require 'server)
+(unless (or (daemonp)
+            (server-running-p))
+  (server-start))
+#+end_src
+
+* EditorConfig
+#+begin_src emacs-lisp
+(use-package editorconfig
+  :config
+  (editorconfig-mode enable-mode))
 #+end_src
 
 * UI
@@ -94,37 +114,69 @@
   (consult-org-roam-mode enable-mode))
 #+end_src
 
+* Session
+#+begin_src emacs-lisp
+(use-package recentf
+  :straight nil
+  :config
+  (recentf-mode enable-mode)
+  :custom
+  (recentf-max-saved-items 100)
+  (recentf-max-menu-items 15))
+
+(use-package savehist
+  :straight nil
+  :config
+  (savehist-mode enable-mode))
+
+(use-package saveplace
+  :straight nil
+  :config
+  (save-place-mode enable-mode))
+
+(global-auto-revert-mode enable-mode)
+(column-number-mode enable-mode)
+#+end_src
+
 * Dashboard
 #+begin_src emacs-lisp
-  ;; 1. Dashboard setup
   (use-package dashboard
     :after projectile
-    :config
-    (dashboard-setup-startup-hook)
     :custom
-    (dashboard-startup-banner 'official)
-    (dashboard-banner-logo-title "Welcome back, daimyo.")
-    (dashboard-center-content t)
-    (dashboard-show-shortcuts nil)
-    (dashboard-set-heading-icons t)
-    (dashboard-set-file-icons t)
-    (dashboard-items '((recents   . 5)
-                       (projects  . 10)
-                       (agenda    . 7)
-                       (bookmarks . 5)
-                       (config-files . 2)))
-    (dashboard-footer-messages '("Ready to hack."))
-    (dashboard-projects-backend 'projectile)
+    (dashboard-center-content           t)
+    (dashboard-show-shortcuts           nil)
+    (dashboard-set-heading-icons        t)
+    (dashboard-set-file-icons           t)
+    (dashboard-display-icons-p          t)
+    (dashboard-icon-type                'nerd-icons)
+    (dashboard-items                    '((recents  . 5)
+                                          (projects . 5)
+                                          (agenda   . 5)))
+    (dashboard-projects-backend         'projectile)
     (dashboard-projects-switch-function 'projectile-switch-project-by-name)
-    (dashboard-path-style 'truncate-middle)
-    (dashboard-display-icons-p t)
-    (dashboard-icon-type 'nerd-icons))
+    (dashboard-path-style               'truncate-middle))
 
-  ;; 2. doom-dashboard – widget navigation
   (use-package doom-dashboard
     :straight (doom-dashboard :host github :repo "emacs-dashboard/doom-dashboard")
     :after dashboard
-    :demand t)
+    :demand t
+    :bind
+    (:map dashboard-mode-map
+        ("<remap> <dashboard-previous-line>" . widget-backward)
+        ("<remap> <dashboard-next-line>" . widget-forward)
+        ("<remap> <previous-line>" . widget-backward)
+        ("<remap> <next-line>"  . widget-forward)
+        ("<remap> <right-char>" . widget-forward)
+        ("<remap> <left-char>"  . widget-backward))
+    :config
+    (setq dashboard-startup-banner    (concat doom-dashboard-banner-directory "bcc.txt")
+          dashboard-banner-logo-title "Welcome back, daimyo."
+          dashboard-footer-messages   '("Ready to hack.")
+          dashboard-startupify-list   '(dashboard-insert-banner
+                                        dashboard-insert-banner-title
+                                        dashboard-insert-items         ;; recents/projects/agenda
+                                        doom-dashboard-insert-homepage-footer))
+    (dashboard-setup-startup-hook))
 #+end_src
 
 * Projectile
@@ -147,6 +199,33 @@
 (use-package avy
   :custom
   (avy-timeout-seconds 0.3))
+#+end_src
+
+* Visual
+#+begin_src emacs-lisp
+(winner-mode enable-mode)
+
+(electric-pair-mode enable-mode)
+
+(use-package display-line-numbers
+  :straight nil
+  :hook ((prog-mode . display-line-numbers-mode)
+         (org-mode  . display-line-numbers-mode))
+  :custom
+  (display-line-numbers-type 'relative)
+  (display-line-numbers-width-start t))
+
+(use-package rainbow-delimiters
+  :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
+         (lisp-mode        . rainbow-delimiters-mode)
+         (scheme-mode      . rainbow-delimiters-mode)))
+
+(use-package beacon
+  :custom
+  (beacon-size 20)
+  (beacon-blink-duration 0.3)
+  :config
+  (beacon-mode enable-mode))
 #+end_src
 
 * Evil Mode
@@ -218,15 +297,26 @@
 #+begin_src emacs-lisp
 (use-package lsp-mode
   :commands lsp
-  :hook ((c-mode      . lsp)
-         (c++-mode    . lsp)
-         (c-ts-mode   . lsp)
-         (c++-ts-mode . lsp)
-         (lsp-mode    . lsp-enable-which-key-integration))
+  :hook ((c-mode         . lsp)
+         (c++-mode       . lsp)
+         (c-ts-mode      . lsp)
+         (c++-ts-mode    . lsp)
+         (php-mode       . lsp)
+         (python-mode    . lsp)
+         (python-ts-mode . lsp)
+         (lsp-mode       . lsp-enable-which-key-integration))
   :custom
   (lsp-prefer-flymake nil)
   (lsp-diagnostics-provider :flycheck)
-  (lsp-clangd-binary-path (executable-find "clangd")))
+  (lsp-clangd-binary-path (executable-find "clangd"))
+  :config
+  (when-let ((pyright (executable-find "pyright-langserver")))
+    (lsp-register-client
+     (make-lsp-client
+      :new-connection (lsp-stdio-connection `(,pyright "--stdio"))
+      :activation-fn (lsp-activate-on "python")
+      :server-id 'pyright
+      :priority 1))))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -244,18 +334,41 @@
   :after lsp-mode
   :config
   (dap-auto-configure-mode enable-mode)
-  ;; Download the debug adapter only once
+  ;; C/C++ debug adapter
   (when (executable-find "lldb-vscode")
     (unless (file-exists-p (dap-gdb-lldb--extension-path "lldb"))
-      (dap-gdb-lldb-setup)))
-  (setq dap-lldb-debug-program
-        `(,(executable-find "lldb-vscode"))))
+      (dap-gdb-lldb-setup))
+    (setq dap-lldb-debug-program
+          `(,(executable-find "lldb-vscode"))))
+  ;; PHP debug adapter
+  (when (executable-find "node")
+    (require 'dap-php)
+    (setq dap-php-debug-program `(,(executable-find "node"))))
+  ;; Python debug adapter
+  (when (executable-find "debugpy")
+    (require 'dap-python)
+    (setq dap-python-debugger 'debugpy
+          dap-python-executable (executable-find "python"))))
 #+end_src
 
 * Syntax Checking
 #+begin_src emacs-lisp
 (use-package flycheck
   :hook (after-init . global-flycheck-mode))
+#+end_src
+
+* TODO Highlights
+#+begin_src emacs-lisp
+(use-package hl-todo
+  :hook ((prog-mode . hl-todo-mode)
+         (org-mode  . hl-todo-mode))
+  :custom
+  (hl-todo-keyword-faces
+   '(("TODO"   . "#cc241d")
+     ("FIXME"  . "#d79921")
+     ("HACK"   . "#b16286")
+     ("NOTE"   . "#458588")
+     ("WARN"   . "#d65d0e"))))
 #+end_src
 
 * C / C++
@@ -274,6 +387,39 @@
                    (add-hook 'before-save-hook #'clang-format-buffer nil t))))
 #+end_src
 
+* php
+#+begin_src emacs-lisp
+(use-package php-mode
+  :mode "\\.php\\'"
+  :config
+  (setq php-mode-coding-style 'psr2))
+
+(add-hook 'php-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+
+(use-package web-mode
+  :mode "\\.phtml\\'"
+  :mode "\\.blade\\.php\\'")
+
+#+end_src
+* Python
+#+begin_src emacs-lisp
+(add-hook 'python-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+
+(add-hook 'python-ts-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+#+end_src
+
+* Envrc
+#+begin_src emacs-lisp
+(use-package envrc
+  :config
+  (envrc-global-mode enable-mode))
+#+end_src
 * Makefile
 #+begin_src emacs-lisp
 (add-hook 'makefile-mode-hook
@@ -314,6 +460,18 @@
               (ibuffer-switch-to-saved-filter-groups "default"))))
 #+end_src
 
+* Dired
+#+begin_src emacs-lisp
+(use-package dired
+  :straight nil
+  :custom
+  (dired-listing-switches "-alh --group-directories-first")
+  (dired-dwim-target t))
+
+(use-package nerd-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
+#+end_src
+
 * Arduino
 #+begin_src emacs-lisp
 (use-package arduino-mode
@@ -351,7 +509,7 @@
         "* TODO %?\n  %i\n  %a")
        ("n" "Note"    entry (file+headline "~/org/inbox.org" "Notes")
         "* %?\n  %i\n  %a")
-       ("j" "Journal" entry (file+datetree "~/org/journal.org")
+       ("j" "Journal" entry (file+olp+datetree "~/org/journal.org")
         "* %?\nEntered on %U\n  %i\n  %a"))))
 
 
@@ -422,6 +580,16 @@
                  (display-buffer-reuse-window display-buffer-at-bottom)
                  (reusable-frames . visible)
                  (window-height . 0.3))))
+#+end_src
+
+* Helpful
+#+begin_src emacs-lisp
+(use-package helpful
+  :bind
+  ([remap describe-function] . helpful-callable)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-key]      . helpful-key)
+  ([remap describe-command]  . helpful-command))
 #+end_src
 
 * Keybindings
@@ -585,16 +753,4 @@
       "q"   '(:ignore t                         :wk "quit")
       "qq"  '(save-buffers-kill-emacs           :wk "quit emacs")
       "qr"  '(restart-emacs                     :wk "restart emacs")))
-#+end_src
-
-* Dashboard Keybindings
-#+begin_src emacs-lisp
-  ;; Make widget navigation work with Evil’s normal state
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal dashboard-mode-map
-      (kbd "TAB")        #'widget-forward
-      (kbd "<backtab>")  #'widget-backward
-      (kbd "n")          #'widget-forward
-      (kbd "p")          #'widget-backward
-      (kbd "RET")        #'widget-button-press))
 #+end_src
