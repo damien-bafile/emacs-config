@@ -439,25 +439,26 @@
 
 * Buffer Management
 #+begin_src emacs-lisp
-(use-package ibuffer
-  :straight nil
-  :config
-  (setq ibuffer-saved-filter-groups
-        '(("default"
-           ("Org"      (mode . org-mode))
-           ("C/C++"    (or (mode . c-mode)
-                           (mode . c++-mode)
-                           (mode . c-ts-mode)
-                           (mode . c++-ts-mode)))
-           ("Arduino"  (mode . arduino-mode))
-           ("Dired"    (mode . dired-mode))
-           ("Terminal" (mode . vterm-mode))
-           ("Magit"    (name . "^\\*magit"))
-           ("Emacs"    (or (name . "^\\*scratch\\*$")
-                           (name . "^\\*Messages\\*$"))))))
-  (add-hook 'ibuffer-mode-hook
-            (lambda ()
-              (ibuffer-switch-to-saved-filter-groups "default"))))
+  (use-package ibuffer
+    :straight nil
+    :config
+    (setq ibuffer-saved-filter-groups
+          '(("default"
+             ("Org"      (mode . org-mode))
+             ("C/C++"    (or (mode . c-mode)
+                             (mode . c++-mode)
+                             (mode . c-ts-mode)
+                             (mode . c++-ts-mode)))
+             ("Arduino"  (mode . arduino-mode))
+             ("Dired"    (mode . dired-mode))
+             ("Terminal" (mode . vterm-mode))
+             ("Magit"    (name . "^\\*magit"))
+             ("Emacs"    (or (name . "^\\*scratch\\*$")
+                             (name . "^\\*Messages\\*$"))))))
+    (setq magit-repository-directories '(("~/Dev" . 2)))
+    (add-hook 'ibuffer-mode-hook
+              (lambda ()
+                (ibuffer-switch-to-saved-filter-groups "default"))))
 #+end_src
 
 * Dired
@@ -469,7 +470,7 @@
   (dired-dwim-target t))
 
 (use-package nerd-icons-dired
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . nerd-icons-dired-mode))
 #+end_src
 
 * Arduino
@@ -548,7 +549,18 @@
 
 * Git
 #+begin_src emacs-lisp
-(use-package magit)
+  (use-package magit)
+#+end_src
+
+* Forge
+#+begin_src emacs-lisp
+  (use-package forge
+    :after magit
+    :custom
+    (forge-alist '(("github.com" "github.com/api/v3" "github.com" forge-github-repository)))
+    (forge-owned-accounts '(("github.com" "damien-bafile")))
+    (forge-database-file (expand-file-name "forge-database.sqlite" user-emacs-directory))
+    (forge-add-default-bindings nil))
 #+end_src
 
 * Terminal
@@ -594,25 +606,6 @@
 
 * Keybindings
 #+begin_src emacs-lisp
-  (defun my/just-run-in-project (args)
-    "Run `just ARGS' in a vterm at the project root if a justfile exists.
-  If ARGS is empty, runs the default recipe."
-    (interactive "sJust args: ")
-    (if-let ((root (and (fboundp 'projectile-project-root)
-                        (projectile-project-root))))
-        (if (file-exists-p (expand-file-name "justfile" root))
-            (let ((default-directory root)
-                  (buffer (get-buffer-create "*just*")))
-              (with-current-buffer buffer
-                (unless (derived-mode-p 'vterm-mode)
-                  (vterm-mode)))
-              (display-buffer buffer)
-              (with-current-buffer buffer
-                (vterm-send-string (concat "just " args))
-                (vterm-send-return)))
-          (message "No justfile found in project root"))
-      (message "Not in a project")))
-
   (use-package general
     :after evil
     :config
@@ -674,7 +667,6 @@
       "pp"  '(consult-projectile                :wk "switch project")
       "pf"  '(consult-projectile-find-file       :wk "find file")
       "ps"  '(consult-projectile-ripgrep         :wk "search project")
-      "pj"  '(my/just-run-in-project            :wk "just run")
 
       ;; Git
       "g"   '(:ignore t                         :wk "git")
@@ -682,6 +674,10 @@
       "gb"  '(magit-blame                       :wk "magit blame")
       "gl"  '(magit-log-current                 :wk "magit log")
       "gd"  '(magit-diff-working-tree           :wk "magit diff")
+      "gP"  '(forge-list-pullreqs               :wk "list pullreqs")
+      "gI"  '(forge-list-issues                 :wk "list issues")
+      "gN"  '(forge-list-notifications          :wk "notifications")
+      "gB"  '(forge-browse                      :wk "browse repo")
 
       ;; LSP
       "l"   '(:ignore t                         :wk "lsp")
