@@ -151,7 +151,8 @@
     (dashboard-icon-type                'nerd-icons)
     (dashboard-items                    '((recents  . 5)
                                           (projects . 5)
-                                          (agenda   . 5)))
+                                          (agenda   . 5)
+                                          (mu4e-mail . 3)))
     (dashboard-projects-backend         'projectile)
     (dashboard-projects-switch-function 'projectile-switch-project-by-name)
     (dashboard-path-style               'truncate-middle))
@@ -192,6 +193,20 @@
 
 (use-package consult-projectile
   :after (consult projectile))
+#+end_src
+
+* Workspaces
+#+begin_src emacs-lisp
+(use-package tabspaces
+  :after projectile
+  :hook (after-init . tabspaces-mode)
+  :custom
+  (tabspaces-use-filtered-buffers-as-default t)
+  (tabspaces-default-tab "Home")
+  (tabspaces-remove-to-default t)
+  (tabspaces-include-buffers '("*scratch*" "*Messages*" "*dashboard*"))
+  :config
+  (tab-bar-history-mode 1))
 #+end_src
 
 * Avy
@@ -451,7 +466,7 @@
                              (mode . c++-ts-mode)))
              ("Arduino"  (mode . arduino-mode))
              ("Dired"    (mode . dired-mode))
-             ("Terminal" (mode . vterm-mode))
+              ("Terminal" (mode . eat-mode))
              ("Magit"    (name . "^\\*magit"))
              ("Emacs"    (or (name . "^\\*scratch\\*$")
                              (name . "^\\*Messages\\*$"))))))
@@ -565,33 +580,61 @@
 
 * Terminal
 #+begin_src emacs-lisp
-(use-package vterm
+(use-package eat
   :custom
-  (vterm-max-scrollback 10000))
-
-(use-package vterm-toggle
-  :after vterm
-  :custom
-  (vterm-toggle-fullscreen-p nil)
-  (vterm-toggle-scope 'project)
+  (eat-kill-buffer-on-exit t)
   :config
-  (add-to-list 'display-buffer-alist
-               `((lambda (buf _)
-                   (when (bufferp buf)
-                     (with-current-buffer buf
-                       (or (derived-mode-p 'vterm-mode)
-                           (string-prefix-p "*vterm" (buffer-name buf))))))
-                 (display-buffer-reuse-window display-buffer-at-bottom)
-                 (reusable-frames . visible)
-                 (window-height . 0.3)))
-  ;; same treatment for the *just* runner
-  (add-to-list 'display-buffer-alist
-               `((lambda (buf _)
-                   (when (bufferp buf)
-                     (string= (buffer-name buf) "*just*")))
-                 (display-buffer-reuse-window display-buffer-at-bottom)
-                 (reusable-frames . visible)
-                 (window-height . 0.3))))
+  (eat-eshell-mode))
+
+(use-package popper
+  :bind (("C-`"   . popper-toggle))
+  :custom
+  (popper-reference-buffers
+   '("\\*eat\\*"
+     "\\*Help\\*"
+     "\\*helpful"
+     flycheck-error-list-mode
+     compilation-mode))
+  :config
+  (popper-mode 1))
+
+(defun my/eat-bottom ()
+  (interactive)
+  (let ((display-buffer-alist
+         `(((derived-mode . eat-mode)
+            (display-buffer-reuse-window display-buffer-at-bottom)
+            (window-height . 0.35))
+           ,@display-buffer-alist)))
+    (eat)))
+
+(defun my/eat-left ()
+  (interactive)
+  (let ((display-buffer-alist
+         `(((derived-mode . eat-mode)
+            (display-buffer-in-side-window)
+            (side . left)
+            (window-width . 40))
+           ,@display-buffer-alist)))
+    (eat)))
+
+(defun my/eat-right ()
+  (interactive)
+  (let ((display-buffer-alist
+         `(((derived-mode . eat-mode)
+            (display-buffer-in-side-window)
+            (side . right)
+            (window-width . 40))
+           ,@display-buffer-alist)))
+    (eat)))
+
+(defun my/eat-fullscreen ()
+  (interactive)
+  (let ((display-buffer-alist
+         `(((derived-mode . eat-mode)
+            (display-buffer-same-window))
+           ,@display-buffer-alist)))
+    (delete-other-windows)
+    (eat)))
 #+end_src
 
 * Helpful
@@ -602,6 +645,65 @@
   ([remap describe-variable] . helpful-variable)
   ([remap describe-key]      . helpful-key)
   ([remap describe-command]  . helpful-command))
+#+end_src
+
+* Email
+#+begin_src emacs-lisp
+(use-package mu4e
+  :ensure nil
+  :load-path "/usr/share/emacs/site-lisp/mu4e"
+  :commands mu4e
+  :init
+  (setq mu4e-maildir "~/.local/share/mail"
+        mu4e-mu-binary (executable-find "mu")
+        mu4e-get-mail-command "mbsync -a"
+        mu4e-update-interval 300
+        mu4e-headers-skip-duplicates t
+        mu4e-change-filenames-when-moving t
+        mu4e-attachment-dir "~/Downloads"
+        mu4e-compose-signature-auto-include nil
+        mu4e-confirm-quit nil
+        mu4e-context-policy 'pick-first
+        mu4e-compose-context-policy 'always-ask
+        message-kill-buffer-on-exit t
+        mail-user-agent 'mu4e-user-agent
+        sendmail-program (executable-find "msmtp")
+        message-sendmail-f-is-evil t
+        message-sendmail-extra-arguments '("--read-envelope-from")
+        message-send-mail-function 'message-send-mail-with-sendmail
+        send-mail-function 'message-send-mail-with-sendmail)
+  :config
+  (setq mu4e-contexts
+        (list
+         (make-mu4e-context
+          :name "gmail"
+          :match-func (lambda (msg) (when msg
+                                      (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address . "damnhatesyou@gmail.com")
+                  (user-full-name . "Damien Bafile")
+                  (mu4e-drafts-folder . "/gmail/[Gmail]/Drafts")
+                  (mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
+                  (mu4e-trash-folder . "/gmail/[Gmail]/Trash")
+                  (mu4e-refile-folder . "/gmail/[Gmail]/All Mail"))))))
+
+(defun dashboard-insert-mu4e-mail (_list-size)
+  "Insert mu4e inbox unread count into the dashboard."
+  (let ((count (condition-case nil
+                   (let ((default-directory "~/.local/share/mail"))
+                     (with-temp-buffer
+                       (call-process "mu" nil t nil
+                                     "find" "maildir:/gmail/INBOX" "flag:unread")
+                       (count-lines (point-min) (point-max))))
+                 (error "?"))))
+    (dashboard-insert-heading "Email:")
+    (dashboard-insert-shortcut
+     (lambda (&rest _) (mu4e))
+     (format "Inbox (%s unread)" count)
+     "mail")))
+
+(with-eval-after-load 'dashboard
+  (add-to-list 'dashboard-item-generators
+               '(mu4e-mail . dashboard-insert-mu4e-mail)))
 #+end_src
 
 * Keybindings
@@ -662,6 +764,14 @@
       "w>"  '(evil-window-increase-width       :wk "enlarge width")
       "w<"  '(evil-window-decrease-width       :wk "shrink width")
 
+      ;; Tabs / Workspaces
+      "TAB"   '(:ignore t                         :wk "tabs")
+      "TAB ." '(tabspaces-open-or-create-project-and-workspace :wk "switch workspace")
+      "TAB n" '(tab-bar-new-tab                   :wk "new workspace")
+      "TAB k" '(tabspaces-close-workspace         :wk "close workspace")
+      "TAB l" '(tabspaces-switch-to-buffer        :wk "buffers in tab")
+      "TAB r" '(tab-bar-rename-tab                :wk "rename workspace")
+
       ;; Project
       "p"   '(:ignore t                         :wk "project")
       "pp"  '(consult-projectile                :wk "switch project")
@@ -708,7 +818,12 @@
 
       ;; Terminal
       "t"   '(:ignore t                         :wk "terminal")
-      "tt"  '(vterm-toggle                      :wk "toggle terminal")
+      "tt"  '(popper-toggle                     :wk "toggle popup")
+      "tb"  '(my/eat-bottom                     :wk "terminal bottom")
+      "tl"  '(my/eat-left                       :wk "terminal left")
+      "tr"  '(my/eat-right                      :wk "terminal right")
+      "tf"  '(my/eat-fullscreen                 :wk "terminal fullscreen")
+      "tp"  '(eat-project                       :wk "terminal project")
 
       ;; Org
       "o"   '(:ignore t                         :wk "org")
@@ -727,6 +842,12 @@
       "ord" '(org-roam-dailies-goto-today       :wk "today's journal")
       "ory" '(org-roam-dailies-goto-yesterday   :wk "yesterday's journal")
       "orc" '(org-roam-dailies-capture-today    :wk "capture to journal")
+
+      ;; Mail
+      "m"   '(:ignore t                         :wk "mail")
+      "mm"  '(mu4e                              :wk "mu4e")
+      "mu"  '(mu4e-update-mail-and-index        :wk "sync mail")
+      "mc"  '(mu4e-compose-new                  :wk "compose")
 
       ;; Arduino
       "a"   '(:ignore t                         :wk "arduino")
