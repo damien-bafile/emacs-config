@@ -175,7 +175,7 @@
           dashboard-footer-messages   '("Ready to hack.")
           dashboard-startupify-list   '(dashboard-insert-banner
                                         dashboard-insert-banner-title
-                                        dashboard-insert-items         ;; recents/projects/agenda
+                                        dashboard-insert-items
                                         doom-dashboard-insert-homepage-footer))
     (dashboard-setup-startup-hook))
 #+end_src
