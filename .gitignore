@@ -33,6 +33,10 @@ projectile-bookmarks.eld
 # Org-roam SQLite database
 org-roam.db
 
+# Forge database (cached GitHub data)
+forge-database.sqlite
+pinned-repos-cache
+
 # Auto‑save list
 auto-save-list/
 
