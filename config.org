@@ -13,9 +13,6 @@
 #+begin_src emacs-lisp
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
-(straight-use-package 'org)
-(require 'org)
-(straight-use-package 'transient)
 #+end_src
 
 * Server
@@ -24,6 +21,16 @@
 (unless (or (daemonp)
             (server-running-p))
   (server-start))
+
+(when (daemonp)
+  (defun my/delete-frame-or-kill-emacs ()
+    "Delete frame if more than one exists. Prompt on last frame."
+    (interactive)
+    (if (> (length (frame-list)) 1)
+        (delete-frame)
+      (when (yes-or-no-p "Exit the Emacs daemon? ")
+        (save-buffers-kill-emacs))))
+  (global-set-key (kbd "C-x C-c") #'my/delete-frame-or-kill-emacs))
 #+end_src
 
 * EditorConfig
@@ -94,7 +101,11 @@
 #+begin_src emacs-lisp
 (use-package vertico
   :config
-  (vertico-mode enable-mode))
+  (vertico-mode enable-mode)
+  (define-key vertico-map (kbd "C-j") #'vertico-next)
+  (define-key vertico-map (kbd "C-k") #'vertico-previous)
+  (define-key vertico-map (kbd "C-h") #'vertico-directory-up)
+  (define-key vertico-map (kbd "C-l") #'vertico-insert))
 
 (use-package orderless
   :custom
@@ -169,14 +180,18 @@
         ("<remap> <right-char>" . widget-forward)
         ("<remap> <left-char>"  . widget-backward))
     :config
-    (setq dashboard-startup-banner    (concat doom-dashboard-banner-directory "bcc.txt")
+    (setq dashboard-startup-banner    (expand-file-name "banners/daimyo.txt" user-emacs-directory))
           dashboard-banner-logo-title "Welcome back, daimyo."
           dashboard-footer-messages   '("Ready to hack.")
           dashboard-startupify-list   '(dashboard-insert-banner
                                         dashboard-insert-banner-title
                                         dashboard-insert-items         ;; recents/projects/agenda
-                                        doom-dashboard-insert-homepage-footer))
+                                        doom-dashboard-insert-homepage-footer)
     (dashboard-setup-startup-hook))
+
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (dashboard-refresh-buffer)))
 #+end_src
 
 * Projectile
@@ -466,10 +481,15 @@
   :straight nil
   :custom
   (dired-listing-switches "-alh --group-directories-first")
-  (dired-dwim-target t))
+  (dired-dwim-target t)
+  :bind (:map dired-mode-map
+              ("C-j" . dired-next-line)
+              ("C-k" . dired-previous-line)
+              ("C-h" . dired-up-directory)
+              ("C-l" . dired-find-file)))
 
 (use-package nerd-icons-dired
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . nerd-icons-dired-mode))
 #+end_src
 
 * Arduino
@@ -483,6 +503,92 @@
   :custom
   (arduino-cli-warnings 'all)
   (arduino-cli-verify t))
+#+end_src
+
+* PlatformIO
+#+begin_src emacs-lisp
+(use-package platformio-mode
+  :commands (platformio-build platformio-upload platformio-device-monitor
+             platformio-clean platformio-init-update-workspace platformio-boards)
+  :hook (c-mode-common-hook . platformio-conditionally-enable)
+  :custom
+  (platformio-mode-prefix-key "C-c i")
+  :config
+  ;; Auto-link compile_commands.json to project root after builds (clangd needs it there)
+  (add-hook 'platformio-mode-hook
+            (lambda ()
+              (when-let ((root (projectile-project-root)))
+                (add-hook 'compilation-finish-functions
+                          (lambda (_buf msg)
+                            (when (string-match-p "finished" msg)
+                              (let ((cdb (expand-file-name "build/compile_commands.json" root))
+                                    (target (expand-file-name "compile_commands.json" root)))
+                                (when (file-exists-p cdb)
+                                  (condition-case nil
+                                      (progn
+                                        (make-symbolic-link cdb target 'ok-if-already-exists)
+                                        (lsp-workspace-restart nil))
+                                    (error nil))))))
+                          nil t)))))
+#+end_src
+
+* ESP-IDF
+#+begin_src emacs-lisp
+;; ESP-IDF minor mode — no MELPA package exists
+(use-package espidf-mode
+  :straight nil
+  :commands (espidf-mode espidf-build espidf-flash espidf-monitor
+             espidf-menuconfig espidf-clean espidf-reconfigure)
+  :init
+  (defun espidf-build ()
+    (interactive) (compile "idf.py build"))
+  (defun espidf-flash ()
+    (interactive) (compile "idf.py flash"))
+  (defun espidf-monitor ()
+    (interactive) (compile "idf.py monitor"))
+  (defun espidf-menuconfig ()
+    (interactive) (compile "idf.py menuconfig"))
+  (defun espidf-clean ()
+    (interactive) (compile "idf.py fullclean"))
+  (defun espidf-reconfigure ()
+    (interactive) (compile "idf.py reconfigure"))
+
+  (define-minor-mode espidf-mode
+    "ESP-IDF integration."
+    :lighter " ESP-IDF"
+    :keymap (let ((map (make-sparse-keymap)))
+              (define-key map (kbd "C-c e b") #'espidf-build)
+              (define-key map (kbd "C-c e u") #'espidf-flash)
+              (define-key map (kbd "C-c e m") #'espidf-monitor)
+              (define-key map (kbd "C-c e k") #'espidf-menuconfig)
+              (define-key map (kbd "C-c e c") #'espidf-clean)
+              (define-key map (kbd "C-c e r") #'espidf-reconfigure)
+              map)
+    (when espidf-mode
+      (setq-local compile-command "idf.py build")
+      (add-hook 'compilation-finish-functions
+                (lambda (buf msg)
+                  (when-let ((root (projectile-project-root)))
+                    (let ((cdb (expand-file-name "build/compile_commands.json" root))
+                          (target (expand-file-name "compile_commands.json" root)))
+                      (when (and (string-match-p "finished" msg)
+                                 (file-exists-p cdb))
+                        (condition-case nil
+                            (make-symbolic-link cdb target 'ok-if-already-exists)
+                          (error nil))
+                        (ignore-errors (lsp-workspace-restart nil))))))
+                nil t)))
+
+  (defun espidf-conditionally-enable ()
+    (when-let ((root (projectile-project-root)))
+      (when (and (file-exists-p (expand-file-name "CMakeLists.txt" root))
+                 (with-temp-buffer
+                   (insert-file-contents (expand-file-name "CMakeLists.txt" root))
+                   (goto-char (point-min))
+                   (search-forward "project.cmake" nil t)))
+        (espidf-mode 1))))
+
+  :hook (c-mode-common-hook . espidf-conditionally-enable))
 #+end_src
 
 * Org Mode
@@ -668,6 +774,8 @@
       "w,"  '(evil-window-decrease-height      :wk "shrink height")
       "w>"  '(evil-window-increase-width       :wk "enlarge width")
       "w<"  '(evil-window-decrease-width       :wk "shrink width")
+      "wo"  '(delete-other-windows              :wk "maximize")
+      "wu"  '(winner-undo                       :wk "restore windows")
 
       ;; Project
       "p"   '(:ignore t                         :wk "project")
@@ -692,6 +800,7 @@
       "la"  '(lsp-execute-code-action           :wk "code action")
       "lf"  '(lsp-format-buffer                 :wk "format")
       "lh"  '(lsp-describe-thing-at-point       :wk "hover docs")
+      "lR"  '(lsp-workspace-restart             :wk "restart lsp")
 
       ;; Errors (flycheck)
       "e"   '(:ignore t                         :wk "errors")
@@ -737,7 +846,25 @@
       "ac"  '(arduino-cli-compile               :wk "compile")
       "au"  '(arduino-cli-upload                :wk "upload")
       "am"  '(arduino-cli-compile-and-upload    :wk "compile & upload")
-      "as"  '(arduino-cli-serial-monitor        :wk "serial monitor")
+       "as"  '(arduino-cli-serial-monitor        :wk "serial monitor")
+
+      ;; PlatformIO
+      "P"   '(:ignore t                         :wk "platformio")
+      "Pb"  '(platformio-build                  :wk "build")
+      "Pu"  '(platformio-upload                 :wk "upload")
+      "Pm"  '(platformio-device-monitor         :wk "serial monitor")
+      "Pc"  '(platformio-clean                  :wk "clean")
+      "Pi"  '(platformio-init-update-workspace  :wk "update workspace")
+      "Pl"  '(platformio-boards                 :wk "list boards")
+
+      ;; ESP-IDF
+      "I"   '(:ignore t                         :wk "espidf")
+      "Ib"  '(espidf-build                      :wk "build")
+      "Iu"  '(espidf-flash                      :wk "flash")
+      "Im"  '(espidf-monitor                    :wk "monitor")
+      "Ik"  '(espidf-menuconfig                 :wk "menuconfig")
+      "Ic"  '(espidf-clean                      :wk "fullclean")
+      "Ir"  '(espidf-reconfigure                :wk "reconfigure")
 
       ;; Undo
       "u"   '(undo-tree-visualize               :wk "undo tree")
@@ -751,6 +878,6 @@
 
       ;; Quit
       "q"   '(:ignore t                         :wk "quit")
-      "qq"  '(save-buffers-kill-emacs           :wk "quit emacs")
+      "qq"  '(my/delete-frame-or-kill-emacs     :wk "quit")
       "qr"  '(restart-emacs                     :wk "restart emacs")))
 #+end_src
