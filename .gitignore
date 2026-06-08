@@ -48,3 +48,7 @@ mise.toml
 authinfo
 authinfo.gpg
 /AGENTS.md
+.local/cache/saveplace
+.dap-breakpoints
+/.local
+projects
