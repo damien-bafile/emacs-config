@@ -812,6 +812,25 @@
                '(mu4e-mail . dashboard-insert-mu4e-mail)))
 #+end_src
 
+* Nix
+#+begin_src emacs-lisp
+(use-package nix-mode
+  :mode "\\.nix\\'"
+  :config
+  (add-hook 'nix-mode-hook #'lsp-deferred))
+
+;; Optional: nil language server (install nil separately)
+;; lsp-mode automatically picks it up if you have the :client registration above
+
+(use-package nix-buffer
+  :straight (nix-buffer :host github :repo "travisbhartwell/nix-emacs")
+  :config
+  (nix-buffer-global-mode))
+
+(use-package nix-update
+  :straight (nix-update :host github :repo "symphorien/nix-update-el"))
+#+end_src
+
 * Keybindings
 #+begin_src emacs-lisp
   (use-package general
