@@ -1108,6 +1108,26 @@ CMake:      just run"
      (t
       (projectile-compile-project)))))
 
+(defun my/project-build ()
+  "Build the current project based on its type.
+Rust:     cargo build
+PlatformIO: just build
+Python/uv:  uv sync
+CMake:      just build"
+  (interactive)
+  (let ((root (projectile-project-root)))
+    (cond
+     ((and root (file-exists-p (expand-file-name "platformio.ini" root)))
+      (compile "just build"))
+     ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
+      (compile "cargo build"))
+     ((and root (file-exists-p (expand-file-name "uv.lock" root)))
+      (compile "uv sync"))
+     ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
+      (compile "just build"))
+     (t
+      (projectile-compile-project)))))
+
 (defun my/reload-config ()
   "Reload literate config.org."
   (interactive)
@@ -1322,7 +1342,7 @@ CMake:      just run"
       "p"   '(:ignore true                         :wk "project")
       "pp"  '(consult-projectile                :wk "switch project")
       "pf"  '(consult-projectile-find-file       :wk "find file")
-      "pb"  '(projectile-compile-project        :wk "build project")
+      "pb"  '(my/project-build                    :wk "build project")
       "pr"  '(my/project-run                     :wk "run project")
       "ps"  '(consult-ripgrep                    :wk "search project")
 
