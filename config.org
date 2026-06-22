@@ -280,6 +280,11 @@
                 (persp-add-buffer "*scratch*")))))
 
 ;; Doom-style workspace helpers built on persp-mode
+(unless (fboundp 'persp-list)
+  (defun persp-list ()
+    "Return a list of all perspective objects."
+    (mapcar #'persp-get-by-name (persp-names))))
+
 (defun my/workspace-display ()
   "Display open workspaces in the echo area."
   (interactive)
@@ -296,13 +301,13 @@
   "Create a new blank workspace."
   (interactive)
   (let ((name (format "#%d" (1+ (length (persp-list))))))
-    (persp-add name)
+    (persp-switch name)
     (my/workspace-display)))
 
 (defun my/workspace-new-named (name)
   "Create a new workspace with NAME."
   (interactive "sWorkspace name: ")
-  (persp-add name)
+  (persp-switch name)
   (my/workspace-display))
 
 (defun my/workspace-switch-to (index)
@@ -384,6 +389,89 @@
   (persp-load-state-from-file))
 #+end_src
 
+* IRC (ERC)
+#+begin_src emacs-lisp
+(use-package erc
+  :straight nil
+  :commands (erc erc-tls)
+  :custom
+  ;; Server defaults (override with C-u before connecting)
+  (erc-server "irc.libera.chat")
+  (erc-port 6697)
+  (erc-nick "daimyo")
+  (erc-user-full-name "daimyo")
+  (erc-use-auth-source t)
+  ;; Display
+  (erc-fill-column 100)
+  (erc-fill-function 'erc-fill-wrap)
+  (erc-fill-prefix "   ")
+  (erc-timestamp-format "%H:%M")
+  (erc-timestamp-only-if-changed-flag t)
+  (erc-insert-timestamp-function 'erc-insert-timestamp-left)
+  ;; Track
+  (erc-track-exclude-types '("JOIN" "PART" "QUIT" "NICK"))
+  (erc-track-exclude '("*ERC QI*" "*erc-gnus*"))
+  (erc-track-shorten-names t)
+  (erc-track-use-faces t)
+  (erc-track-faces-priorities
+   '((erc-current-nick-face . erc-track-direct-changed-buffer-face)
+     (default . erc-track-changed-buffer-face)))
+  ;; Behavior
+  (erc-kill-buffer-on-part t)
+  (erc-kill-queries-on-quit t)
+  (erc-kill-server-on-quit nil)
+  (erc-save-buffer-on-part nil)
+  (erc-autojoin-mode t)
+  (erc-autojoin-channels-alist
+   '(("irc.libera.chat" "#emacs" "#clojure" "#rust")))
+  (erc-server-reconnect-attempts 5)
+  (erc-server-reconnect-timeout 3)
+  (erc-prompt-for-nickserv-password nil)
+  ;; TLS
+  (erc-tls-ssl-program "gnutls-cli")
+  (erc-tls-certificate-verification t)
+  :config
+  (erc-modules '(sasl tracking fill button nicks replace
+                 match ring stamp unread))
+  ;; Evil integration
+  (evil-set-initial-state 'erc-mode 'normal)
+  (evil-define-key 'normal erc-mode-map
+    (kbd "i")   #'erc-switch-to-input-buffer
+    (kbd "RET") #'erc-send-current-line
+    (kbd "q")   #'bury-buffer
+    (kbd "Q")   #'erc-quit-server
+    (kbd "J")   #'erc-next-channel-buffer
+    (kbd "K")   #'erc-prev-channel-buffer)
+  ;; Activity tracking in mode-line
+  (erc-track-mode t))
+
+;; Custom helper functions
+(defun my/erc-tls ()
+  "Connect to IRC via TLS."
+  (interactive)
+  (erc-tls :server erc-server :port erc-port :nick erc-nick))
+
+(defun my/erc-join (channel)
+  "Join CHANNEL on the current server."
+  (interactive "sChannel: ")
+  (erc-send-join (if (string-prefix-p "#" channel) channel (concat "#" channel))))
+
+(defun my/erc-switch-to-input-buffer ()
+  "Switch to the ERC input buffer."
+  (interactive)
+  (let ((input-buf (erc--get-input-buffer)))
+    (when input-buf
+      (switch-to-buffer input-buf)
+      (goto-char (point-max))
+      (evil-insert-state))))
+
+(defun my/erc-quit-and-bury ()
+  "Quit ERC and bury the buffer."
+  (interactive)
+  (erc-quit-server "Goodbye")
+  (bury-buffer))
+#+end_src
+
 * Dashboard
 #+begin_src emacs-lisp
   (use-package dashboard
@@ -443,6 +531,7 @@
          (php-mode       . lsp)
          (python-mode    . lsp)
          (python-ts-mode . lsp)
+         (rust-ts-mode   . lsp)
          (lsp-mode       . lsp-enable-which-key-integration))
   :custom
   (lsp-prefer-flymake false)
@@ -469,6 +558,22 @@
   (lsp-ui-sideline-enable true)
   (lsp-ui-sideline-show-diagnostics true)
   (lsp-ui-sideline-show-code-actions true))
+#+end_src
+
+* Rust
+#+begin_src emacs-lisp
+(use-package rust-mode
+  :straight nil
+  :mode ("\\.rs\\'" . rust-ts-mode))
+
+(use-package cargo-mode
+  :hook (rust-ts-mode . cargo-minor-mode)
+  :config
+  (evil-define-key 'normal cargo-mode-map
+    (kbd "C-c C-b") #'cargo-process-build
+    (kbd "C-c C-c") #'cargo-process-check
+    (kbd "C-c C-t") #'cargo-process-test
+    (kbd "C-c C-r") #'cargo-process-run))
 #+end_src
 
 * Syntax Checking
@@ -683,6 +788,8 @@
   :custom
   (dired-listing-switches "-alh --group-directories-first")
   (dired-dwim-target true)
+  :config
+  (setq insert-directory-program "/opt/homebrew/bin/gls")
   :bind (:map dired-mode-map
               ("C-j" . dired-next-line)
               ("C-k" . dired-previous-line)
@@ -976,7 +1083,37 @@
 
 (with-eval-after-load 'dashboard
   (add-to-list 'dashboard-item-generators
-               '(mu4e-mail . dashboard-insert-mu4e-mail)))
+                '(mu4e-mail . dashboard-insert-mu4e-mail)))
+#+end_src
+
+* Utilities
+#+begin_src emacs-lisp
+(defun my/project-run ()
+  "Run the current project based on its type.
+Rust:     cargo run
+PlatformIO: just deploy
+Python/uv:  uv run
+CMake:      just run"
+  (interactive)
+  (let ((root (projectile-project-root)))
+    (cond
+     ((and root (file-exists-p (expand-file-name "platformio.ini" root)))
+      (compile "just deploy"))
+     ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
+      (compile "cargo run"))
+     ((and root (file-exists-p (expand-file-name "uv.lock" root)))
+      (compile "uv run"))
+     ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
+      (compile "just run"))
+     (t
+      (projectile-compile-project)))))
+
+(defun my/reload-config ()
+  "Reload literate config.org."
+  (interactive)
+  (org-babel-load-file
+   (expand-file-name "config.org" user-emacs-directory))
+  (message "Config reloaded"))
 #+end_src
 
 * Matrix
@@ -1166,6 +1303,8 @@
       "p"   '(:ignore true                         :wk "project")
       "pp"  '(consult-projectile                :wk "switch project")
       "pf"  '(consult-projectile-find-file       :wk "find file")
+      "pb"  '(projectile-compile-project        :wk "build project")
+      "pr"  '(my/project-run                     :wk "run project")
       "ps"  '(consult-ripgrep                    :wk "search project")
 
       ;; Git
@@ -1279,13 +1418,22 @@
       "Ic"  '(espidf-clean                      :wk "fullclean")
       "Ir"  '(espidf-reconfigure                :wk "reconfigure")
 
+      ;; IRC
+      "i"   '(:ignore true                         :wk "irc")
+      "ii"  '(erc                                 :wk "connect")
+      "it"  '(my/erc-tls                          :wk "connect TLS")
+      "ij"  '(my/erc-join                         :wk "join channel")
+      "iq"  '(erc-quit-server                     :wk "quit")
+      "ir"  '(erc-reconnect                       :wk "reconnect")
+
       ;; Undo
       "u"   '(undo-tree-visualize               :wk "undo tree")
 
-      ;; Updates
-      "U"   '(:ignore true                         :wk "updates")
-      "Up"  '(straight-pull-all                 :wk "pull all packages")
-      "Ur"  '(straight-rebuild-all              :wk "rebuild all packages")
+      ;; Emacs
+      "E"   '(:ignore true                         :wk "emacs")
+      "Ep"  '(straight-pull-all                 :wk "pull all packages")
+      "Er"  '(straight-rebuild-all              :wk "rebuild all packages")
+      "ER"  '(my/reload-config                   :wk "reload config")
 
       ;; Help
       "h"   '(:ignore true                         :wk "help")
