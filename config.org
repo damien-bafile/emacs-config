@@ -1092,7 +1092,7 @@
   "Run the current project based on its type.
 Rust:     cargo run
 PlatformIO: just deploy
-Python/uv:  uv run
+Python/uv:  prompt for uv run command
 CMake:      just run"
   (interactive)
   (let ((root (projectile-project-root)))
@@ -1102,7 +1102,7 @@ CMake:      just run"
      ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
       (compile "cargo run"))
      ((and root (file-exists-p (expand-file-name "uv.lock" root)))
-      (compile "uv run"))
+      (compile (read-shell-command "Run: " "uv run ")))
      ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
       (compile "just run"))
      (t
