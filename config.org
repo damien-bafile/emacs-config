@@ -1,18 +1,20 @@
 * File Header
 #+begin_src emacs-lisp :padline no
-;;; config.el --- Emacs configuration -*- lexical-binding: t -*-
+;;; config.el --- Emacs configuration -*- lexical-binding: true -*-
 #+end_src
 
 * Mode Variables
 #+begin_src emacs-lisp
 (setq enable-mode 1
-      disable-mode 0)
+      disable-mode 0
+      true t
+      false nil)
 #+end_src
 
 * Package Management
 #+begin_src emacs-lisp
 (straight-use-package 'use-package)
-(setq straight-use-package-by-default t)
+(setq straight-use-package-by-default true)
 #+end_src
 
 * Server
@@ -40,12 +42,11 @@
   (editorconfig-mode enable-mode))
 #+end_src
 
-* UI
+* Envrc
 #+begin_src emacs-lisp
-(tool-bar-mode     disable-mode)
-(scroll-bar-mode   disable-mode)
-(menu-bar-mode     disable-mode)
-(blink-cursor-mode disable-mode)
+(use-package envrc
+  :config
+  (envrc-global-mode enable-mode))
 #+end_src
 
 * Theme
@@ -57,17 +58,14 @@
 
 * Font
 #+begin_src emacs-lisp
-(set-face-attribute 'default nil
+(set-face-attribute 'default false
                     :family "FiraCode Nerd Font"
                     :height 120
                     :weight 'normal)
 
-(set-face-attribute 'fixed-pitch nil
+(set-face-attribute 'fixed-pitch false
                     :family "FiraCode Nerd Font")
 
-;; Proportional font for variable-pitch text (install liberation-fonts if needed)
-(set-face-attribute 'variable-pitch nil
-                    :family "Liberation Sans")
 #+end_src
 
 * Modeline
@@ -82,153 +80,28 @@
   :custom
   (doom-modeline-height 25)
   (doom-modeline-bar-width 4)
-  (doom-modeline-icon t)
-  (doom-modeline-major-mode-icon t)
+  (doom-modeline-icon true)
+  (doom-modeline-major-mode-icon true)
   (doom-modeline-buffer-file-name-style 'truncate-upto-project)
   (doom-modeline-vcs-max-length 24))
 #+end_src
 
-* Which Key
+* UI
 #+begin_src emacs-lisp
-(use-package which-key
-  :custom
-  (which-key-idle-delay 0.3)
-  :config
-  (which-key-mode enable-mode))
+(tool-bar-mode     disable-mode)
+(scroll-bar-mode   disable-mode)
+(menu-bar-mode     disable-mode)
+(blink-cursor-mode disable-mode)
 #+end_src
 
-* Completion UI
+* Golden Ratio
 #+begin_src emacs-lisp
-(use-package vertico
-  :config
-  (vertico-mode enable-mode)
-  (define-key vertico-map (kbd "C-j") #'vertico-next)
-  (define-key vertico-map (kbd "C-k") #'vertico-previous)
-  (define-key vertico-map (kbd "C-h") #'vertico-directory-up)
-  (define-key vertico-map (kbd "C-l") #'vertico-insert))
-
-(use-package orderless
+(use-package golden-ratio
+  :straight t
   :custom
-  (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles basic partial-completion)))))
-
-(use-package consult
-  :after vertico)
-
-(use-package marginalia
+  (golden-ratio-auto-scale true)
   :config
-  (marginalia-mode enable-mode))
-
-(use-package consult-org-roam
-  :after org-roam
-  :config
-  (consult-org-roam-mode enable-mode))
-#+end_src
-
-* Session
-#+begin_src emacs-lisp
-(use-package recentf
-  :straight nil
-  :config
-  (recentf-mode enable-mode)
-  :custom
-  (recentf-max-saved-items 100)
-  (recentf-max-menu-items 15))
-
-(use-package savehist
-  :straight nil
-  :config
-  (savehist-mode enable-mode))
-
-(use-package saveplace
-  :straight nil
-  :config
-  (save-place-mode enable-mode))
-
-(global-auto-revert-mode enable-mode)
-(column-number-mode enable-mode)
-#+end_src
-
-* Dashboard
-#+begin_src emacs-lisp
-  (use-package dashboard
-    :after projectile
-    :custom
-    (dashboard-center-content           t)
-    (dashboard-show-shortcuts           nil)
-    (dashboard-set-heading-icons        t)
-    (dashboard-set-file-icons           t)
-    (dashboard-display-icons-p          t)
-    (dashboard-icon-type                'nerd-icons)
-    (dashboard-items                    '((recents  . 5)
-                                          (projects . 5)
-                                          (agenda   . 5)
-                                          (mu4e-mail . 3)))
-    (dashboard-projects-backend         'projectile)
-    (dashboard-projects-switch-function 'projectile-switch-project-by-name)
-    (dashboard-path-style               'truncate-middle))
-
-  (use-package doom-dashboard
-    :straight (doom-dashboard :host github :repo "emacs-dashboard/doom-dashboard")
-    :after dashboard
-    :demand t
-    :bind
-    (:map dashboard-mode-map
-        ("<remap> <dashboard-previous-line>" . widget-backward)
-        ("<remap> <dashboard-next-line>" . widget-forward)
-        ("<remap> <previous-line>" . widget-backward)
-        ("<remap> <next-line>"  . widget-forward)
-        ("<remap> <right-char>" . widget-forward)
-        ("<remap> <left-char>"  . widget-backward))
-    :config
-    (setq dashboard-startup-banner    (expand-file-name "banners/daimyo.txt" user-emacs-directory))
-          dashboard-banner-logo-title "Welcome back, daimyo."
-          dashboard-footer-messages   '("Ready to hack.")
-          dashboard-startupify-list   '(dashboard-insert-banner
-                                        dashboard-insert-banner-title
-                                        dashboard-insert-items
-                                        doom-dashboard-insert-homepage-footer))
-    (dashboard-setup-startup-hook))
-
-  (add-hook 'server-after-make-frame-hook
-            (lambda ()
-              (dashboard-refresh-buffer)))
-#+end_src
-
-* Projectile
-#+begin_src emacs-lisp
-(use-package projectile
-  :custom
-  (projectile-completion-system 'default)
-  (projectile-project-search-path '("~/Dev/"))
-  (projectile-known-projects-file
-   (expand-file-name "projectile-bookmarks.eld" user-emacs-directory))
-  :config
-  (projectile-mode enable-mode))
-
-(use-package consult-projectile
-  :after (consult projectile))
-#+end_src
-
-* Workspaces
-#+begin_src emacs-lisp
-(use-package tabspaces
-  :after projectile
-  :hook (after-init . tabspaces-mode)
-  :custom
-  (tabspaces-use-filtered-buffers-as-default t)
-  (tabspaces-default-tab "Home")
-  (tabspaces-remove-to-default t)
-  (tabspaces-include-buffers '("*scratch*" "*Messages*" "*dashboard*"))
-  :config
-  (tab-bar-history-mode 1))
-#+end_src
-
-* Avy
-#+begin_src emacs-lisp
-(use-package avy
-  :custom
-  (avy-timeout-seconds 0.3))
+  (golden-ratio-mode 1))
 #+end_src
 
 * Visual
@@ -243,7 +116,7 @@
          (org-mode  . display-line-numbers-mode))
   :custom
   (display-line-numbers-type 'relative)
-  (display-line-numbers-width-start t))
+  (display-line-numbers-width-start true))
 
 (use-package rainbow-delimiters
   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
@@ -262,9 +135,9 @@
 #+begin_src emacs-lisp
 (use-package evil
   :init
-  (setq evil-want-integration t
-        evil-want-keybinding nil
-        evil-want-C-u-scroll t)
+  (setq evil-want-integration true
+        evil-want-keybinding false
+        evil-want-C-u-scroll true)
   :config
   (evil-mode enable-mode))
 
@@ -281,7 +154,7 @@
 (use-package undo-tree
   :after evil
   :custom
-  (undo-tree-auto-save-history nil)
+  (undo-tree-auto-save-history false)
   :config
   (global-undo-tree-mode enable-mode)
   (evil-set-undo-system 'undo-tree))
@@ -323,6 +196,330 @@
   (global-treesit-auto-mode))
 #+end_src
 
+* Completion UI
+#+begin_src emacs-lisp
+(use-package vertico
+  :config
+  (vertico-mode enable-mode)
+  (define-key vertico-map (kbd "C-j") #'vertico-next)
+  (define-key vertico-map (kbd "C-k") #'vertico-previous)
+  (define-key vertico-map (kbd "C-h") #'vertico-directory-up)
+  (define-key vertico-map (kbd "C-l") #'vertico-insert))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package consult
+  :after vertico)
+
+(use-package marginalia
+  :config
+  (marginalia-mode enable-mode))
+
+(use-package consult-org-roam
+  :after org-roam
+  :config
+  (consult-org-roam-mode enable-mode))
+#+end_src
+
+* Which Key
+#+begin_src emacs-lisp
+(use-package which-key
+  :custom
+  (which-key-idle-delay 0.3)
+  :config
+  (which-key-mode enable-mode))
+
+#+end_src
+
+* Avy
+#+begin_src emacs-lisp
+(use-package avy
+  :custom
+  (avy-timeout-seconds 0.3))
+#+end_src
+
+* Projectile
+#+begin_src emacs-lisp
+(use-package projectile
+  :custom
+  (projectile-completion-system 'default)
+  (projectile-project-search-path '("~/Dev/"))
+  (projectile-indexing-method 'alien)
+  (projectile-enable-caching t)
+  (projectile-known-projects-file
+   (expand-file-name "projectile-bookmarks.eld" user-emacs-directory))
+  :config
+  (projectile-mode enable-mode))
+
+(use-package consult-projectile
+  :after (consult projectile)
+  :custom
+  (consult-projectile-sources '(consult-projectile--source-projectile-project)))
+#+end_src
+
+* Workspaces
+#+begin_src emacs-lisp
+(use-package persp-mode
+  :after projectile
+  :hook (after-init . persp-mode)
+  :custom
+  (persp-autokill-buffer-on-remove 'kill-weak)
+  (persp-add buffer-predicate nil)
+  (persp-auto-save-opt 1)
+  (persp-auto-save-persp-name "main")
+  (persp-save-dir (expand-file-name "persp-confs" user-emacs-directory))
+  (persp-modestring-use-layouts-name t)
+  :config
+  ;; Don't kill scratch buffer when switching workspaces
+  (add-hook 'persp-after-switch-functions
+            (lambda (&rest _)
+              (when (get-buffer "*scratch*")
+                (persp-add-buffer "*scratch*")))))
+
+;; Doom-style workspace helpers built on persp-mode
+(unless (fboundp 'persp-list)
+  (defun persp-list ()
+    "Return a list of all perspective objects."
+    (mapcar #'persp-get-by-name (persp-names))))
+
+(defun my/workspace-display ()
+  "Display open workspaces in the echo area."
+  (interactive)
+  (let* ((names (mapcar #'persp-name (persp-list)))
+         (current (persp-name (persp-current)))
+         (formatted (mapcar (lambda (name)
+                              (if (string= name current)
+                                  (propertize (format "[%s]" name) 'face 'bold)
+                                name))
+                            names)))
+    (message "Workspaces: %s" (string-join formatted " "))))
+
+(defun my/workspace-new ()
+  "Create a new blank workspace."
+  (interactive)
+  (let ((name (format "#%d" (1+ (length (persp-list))))))
+    (persp-switch name)
+    (my/workspace-display)))
+
+(defun my/workspace-new-named (name)
+  "Create a new workspace with NAME."
+  (interactive "sWorkspace name: ")
+  (persp-switch name)
+  (my/workspace-display))
+
+(defun my/workspace-switch-to (index)
+  "Switch to workspace at INDEX (0-based)."
+  (interactive "nWorkspace index: ")
+  (let ((persps (persp-list)))
+    (when (< index (length persps))
+      (persp-switch (persp-name (nth index persps))))))
+
+(defun my/workspace-switch-by-name ()
+  "Switch to a workspace by name via completing-read."
+  (interactive)
+  (let ((names (mapcar #'persp-name (persp-list))))
+    (when names
+      (persp-switch (completing-read "Workspace: " names nil t)))))
+
+(defun my/workspace-switch-final ()
+  "Switch to the last workspace."
+  (interactive)
+  (let ((persps (persp-list)))
+    (when persps
+      (persp-switch (persp-name (car (last persps)))))))
+
+(defun my/workspace-cycle (direction)
+  "Cycle workspaces in DIRECTION (+1 forward, -1 backward)."
+  (interactive "p")
+  (let* ((persps (persp-list))
+         (current-index (cl-position (persp-current) :test #'eq))
+         (next-index (mod (+ current-index direction) (length persps))))
+    (persp-switch (persp-name (nth next-index persps)))))
+
+(defun my/workspace-kill ()
+  "Kill the current workspace (switch to first if last)."
+  (interactive)
+  (when (> (length (persp-list)) 1)
+    (persp-kill (persp-name (persp-current)))))
+
+(defun my/workspace-rename ()
+  "Rename the current workspace."
+  (interactive)
+  (let ((new-name (read-string "New name: " (persp-name (persp-current)))))
+    (persp-rename new-name (persp-current))
+    (my/workspace-display)))
+
+(defun my/workspace-move-buffer-left ()
+  "Move current buffer to the previous workspace."
+  (interactive)
+  (let* ((persps (persp-list))
+         (current-index (cl-position (persp-current) :test #'eq))
+         (target-index (mod (1- current-index) (length persps)))
+         (target (nth target-index persps)))
+    (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+    (persp-add-buffer (current-buffer) target nil nil)))
+
+(defun my/workspace-move-buffer-right ()
+  "Move current buffer to the next workspace."
+  (interactive)
+  (let* ((persps (persp-list))
+         (current-index (cl-position (persp-current) :test #'eq))
+         (target-index (mod (1+ current-index) (length persps)))
+         (target (nth target-index persps)))
+    (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+    (persp-add-buffer (current-buffer) target nil nil)))
+
+(defun my/workspace-save ()
+  "Save the current workspace session to file."
+  (interactive)
+  (persp-save-state-to-file)
+  (message "Workspace saved"))
+
+(defun my/workspace-load ()
+  "Load a saved workspace session from file."
+  (interactive)
+  (persp-load-state-from-file))
+
+(defun my/workspace-restore-last ()
+  "Restore the last saved session."
+  (interactive)
+  (persp-load-state-from-file))
+#+end_src
+
+* IRC (ERC)
+#+begin_src emacs-lisp
+(use-package erc
+  :straight nil
+  :commands (erc erc-tls)
+  :custom
+  ;; Server defaults (override with C-u before connecting)
+  (erc-server "irc.libera.chat")
+  (erc-port 6697)
+  (erc-nick "daimyo")
+  (erc-user-full-name "daimyo")
+  (erc-use-auth-source t)
+  ;; Display
+  (erc-fill-column 100)
+  (erc-fill-function 'erc-fill-wrap)
+  (erc-fill-prefix "   ")
+  (erc-timestamp-format "%H:%M")
+  (erc-timestamp-only-if-changed-flag t)
+  (erc-insert-timestamp-function 'erc-insert-timestamp-left)
+  ;; Track
+  (erc-track-exclude-types '("JOIN" "PART" "QUIT" "NICK"))
+  (erc-track-exclude '("*ERC QI*" "*erc-gnus*"))
+  (erc-track-shorten-names t)
+  (erc-track-use-faces t)
+  (erc-track-faces-priorities
+   '((erc-current-nick-face . erc-track-direct-changed-buffer-face)
+     (default . erc-track-changed-buffer-face)))
+  ;; Behavior
+  (erc-kill-buffer-on-part t)
+  (erc-kill-queries-on-quit t)
+  (erc-kill-server-on-quit nil)
+  (erc-save-buffer-on-part nil)
+  (erc-autojoin-mode t)
+  (erc-autojoin-channels-alist
+   '(("irc.libera.chat" "#emacs" "#clojure" "#rust")))
+  (erc-server-reconnect-attempts 5)
+  (erc-server-reconnect-timeout 3)
+  (erc-prompt-for-nickserv-password nil)
+  ;; TLS
+  (erc-tls-ssl-program "gnutls-cli")
+  (erc-tls-certificate-verification t)
+  :config
+  (erc-modules '(sasl tracking fill button nicks replace
+                 match ring stamp unread))
+  ;; Evil integration
+  (evil-set-initial-state 'erc-mode 'normal)
+  (evil-define-key 'normal erc-mode-map
+    (kbd "i")   #'erc-switch-to-input-buffer
+    (kbd "RET") #'erc-send-current-line
+    (kbd "q")   #'bury-buffer
+    (kbd "Q")   #'erc-quit-server
+    (kbd "J")   #'erc-next-channel-buffer
+    (kbd "K")   #'erc-prev-channel-buffer)
+  ;; Activity tracking in mode-line
+  (erc-track-mode t))
+
+;; Custom helper functions
+(defun my/erc-tls ()
+  "Connect to IRC via TLS."
+  (interactive)
+  (erc-tls :server erc-server :port erc-port :nick erc-nick))
+
+(defun my/erc-join (channel)
+  "Join CHANNEL on the current server."
+  (interactive "sChannel: ")
+  (erc-send-join (if (string-prefix-p "#" channel) channel (concat "#" channel))))
+
+(defun my/erc-switch-to-input-buffer ()
+  "Switch to the ERC input buffer."
+  (interactive)
+  (let ((input-buf (erc--get-input-buffer)))
+    (when input-buf
+      (switch-to-buffer input-buf)
+      (goto-char (point-max))
+      (evil-insert-state))))
+
+(defun my/erc-quit-and-bury ()
+  "Quit ERC and bury the buffer."
+  (interactive)
+  (erc-quit-server "Goodbye")
+  (bury-buffer))
+#+end_src
+
+* Dashboard
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :after projectile
+    :custom
+    (dashboard-center-content           true)
+    (dashboard-show-shortcuts           false)
+    (dashboard-set-heading-icons        true)
+    (dashboard-set-file-icons           true)
+    (dashboard-display-icons-p          true)
+    (dashboard-icon-type                'nerd-icons)
+    (dashboard-items                    '((recents  . 5)
+                                           (projects . 5)
+                                           (agenda   . 5)))
+    (dashboard-projects-backend         'projectile)
+    (dashboard-projects-switch-function 'projectile-switch-project-by-name)
+    (dashboard-path-style               'truncate-middle))
+
+  (use-package doom-dashboard
+    :straight (doom-dashboard :host github :repo "emacs-dashboard/doom-dashboard")
+    :after dashboard
+    :demand t
+    :bind
+    (:map dashboard-mode-map
+        ("<remap> <dashboard-previous-line>" . widget-backward)
+        ("<remap> <dashboard-next-line>" . widget-forward)
+        ("<remap> <previous-line>" . widget-backward)
+        ("<remap> <next-line>"  . widget-forward)
+        ("<remap> <right-char>" . widget-forward)
+        ("<remap> <left-char>"  . widget-backward))
+    :config
+    (setq dashboard-startup-banner
+          (expand-file-name "banners/daimyo.txt" user-emacs-directory))
+    (setq dashboard-banner-logo-title "Welcome back, daimyo.")
+    (setq dashboard-footer-messages '("Ready to hack."))
+    (setq dashboard-startupify-list
+          '(dashboard-insert-banner
+  	  dashboard-insert-banner-title
+            dashboard-insert-items
+            doom-dashboard-insert-homepage-footer))
+    (dashboard-setup-startup-hook))
+
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (dashboard-refresh-buffer)
+              (switch-to-buffer "*dashboard*")))
+#+end_src
+
 * LSP
 #+begin_src emacs-lisp
 (use-package lsp-mode
@@ -334,28 +531,57 @@
          (php-mode       . lsp)
          (python-mode    . lsp)
          (python-ts-mode . lsp)
+         (rust-ts-mode   . lsp)
          (lsp-mode       . lsp-enable-which-key-integration))
   :custom
-  (lsp-prefer-flymake nil)
+  (lsp-prefer-flymake false)
   (lsp-diagnostics-provider :flycheck)
   (lsp-clangd-binary-path (executable-find "clangd"))
   :config
+  (add-to-list 'lsp-language-id-configuration '(arduino-mode . "cpp"))
   (when-let ((pyright (executable-find "pyright-langserver")))
     (lsp-register-client
      (make-lsp-client
       :new-connection (lsp-stdio-connection `(,pyright "--stdio"))
       :activation-fn (lsp-activate-on "python")
       :server-id 'pyright
-      :priority 1))))
+      :priority 1)))
+  (evil-define-key 'normal lsp-mode-map
+    (kbd "gd") #'lsp-find-definition
+    (kbd "gi") #'lsp-find-implementation))
 
 (use-package lsp-ui
   :after lsp-mode
   :custom
-  (lsp-ui-doc-enable t)
+  (lsp-ui-doc-enable true)
   (lsp-ui-doc-position 'at-point)
-  (lsp-ui-sideline-enable t)
-  (lsp-ui-sideline-show-diagnostics t)
-  (lsp-ui-sideline-show-code-actions t))
+  (lsp-ui-sideline-enable true)
+  (lsp-ui-sideline-show-diagnostics true)
+  (lsp-ui-sideline-show-code-actions true))
+#+end_src
+
+* Rust
+#+begin_src emacs-lisp
+(use-package rust-mode
+  :straight nil
+  :mode ("\\.rs\\'" . rust-ts-mode))
+
+(use-package cargo-mode
+  :hook (rust-ts-mode . cargo-minor-mode)
+  :config
+  (evil-define-key 'normal cargo-mode-map
+    (kbd "C-c C-b") #'cargo-process-build
+    (kbd "C-c C-c") #'cargo-process-check
+    (kbd "C-c C-t") #'cargo-process-test
+    (kbd "C-c C-r") #'cargo-process-run))
+#+end_src
+
+* Syntax Checking
+#+begin_src emacs-lisp
+(use-package flycheck
+  :hook (after-init . global-flycheck-mode)
+  :custom
+  (flycheck-disabled-checkers '(org-lint)))
 #+end_src
 
 * Debugging
@@ -379,12 +605,6 @@
     (require 'dap-python)
     (setq dap-python-debugger 'debugpy
           dap-python-executable (executable-find "python"))))
-#+end_src
-
-* Syntax Checking
-#+begin_src emacs-lisp
-(use-package flycheck
-  :hook (after-init . global-flycheck-mode))
 #+end_src
 
 * TODO Highlights
@@ -414,7 +634,7 @@
 
 (dolist (hook '(c-mode-hook c++-mode-hook c-ts-mode-hook c++-ts-mode-hook))
   (add-hook hook (lambda ()
-                   (add-hook 'before-save-hook #'clang-format-buffer nil t))))
+                   (add-hook 'before-save-hook #'clang-format-buffer false true))))
 #+end_src
 
 * php
@@ -426,35 +646,30 @@
 
 (add-hook 'php-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
 
 (use-package web-mode
   :mode "\\.phtml\\'"
   :mode "\\.blade\\.php\\'")
 
 #+end_src
+
 * Python
 #+begin_src emacs-lisp
 (add-hook 'python-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
 
 (add-hook 'python-ts-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
 #+end_src
 
-* Envrc
-#+begin_src emacs-lisp
-(use-package envrc
-  :config
-  (envrc-global-mode enable-mode))
-#+end_src
 * Makefile
 #+begin_src emacs-lisp
 (add-hook 'makefile-mode-hook
           (lambda ()
-            (setq indent-tabs-mode t)))
+            (setq indent-tabs-mode true)))
 #+end_src
 
 * CMake
@@ -467,47 +682,6 @@
 (use-package just-mode :defer t)
 #+end_src
 
-* Buffer Management
-#+begin_src emacs-lisp
-  (use-package ibuffer
-    :straight nil
-    :config
-    (setq ibuffer-saved-filter-groups
-          '(("default"
-             ("Org"      (mode . org-mode))
-             ("C/C++"    (or (mode . c-mode)
-                             (mode . c++-mode)
-                             (mode . c-ts-mode)
-                             (mode . c++-ts-mode)))
-             ("Arduino"  (mode . arduino-mode))
-             ("Dired"    (mode . dired-mode))
-              ("Terminal" (mode . eat-mode))
-             ("Magit"    (name . "^\\*magit"))
-             ("Emacs"    (or (name . "^\\*scratch\\*$")
-                             (name . "^\\*Messages\\*$"))))))
-    (setq magit-repository-directories '(("~/Dev" . 2)))
-    (add-hook 'ibuffer-mode-hook
-              (lambda ()
-                (ibuffer-switch-to-saved-filter-groups "default"))))
-#+end_src
-
-* Dired
-#+begin_src emacs-lisp
-(use-package dired
-  :straight nil
-  :custom
-  (dired-listing-switches "-alh --group-directories-first")
-  (dired-dwim-target t)
-  :bind (:map dired-mode-map
-              ("C-j" . dired-next-line)
-              ("C-k" . dired-previous-line)
-              ("C-h" . dired-up-directory)
-              ("C-l" . dired-find-file)))
-
-(use-package nerd-icons-dired
-  :hook (dired-mode . nerd-icons-dired-mode))
-#+end_src
-
 * Arduino
 #+begin_src emacs-lisp
 (use-package arduino-mode
@@ -518,7 +692,7 @@
   :hook (arduino-mode . arduino-cli-mode)
   :custom
   (arduino-cli-warnings 'all)
-  (arduino-cli-verify t))
+  (arduino-cli-verify true))
 #+end_src
 
 * PlatformIO
@@ -540,12 +714,12 @@
                               (let ((cdb (expand-file-name "build/compile_commands.json" root))
                                     (target (expand-file-name "compile_commands.json" root)))
                                 (when (file-exists-p cdb)
-                                  (condition-case nil
+                                  (condition-case false
                                       (progn
                                         (make-symbolic-link cdb target 'ok-if-already-exists)
-                                        (lsp-workspace-restart nil))
-                                    (error nil))))))
-                          nil t)))))
+                                        (lsp-workspace-restart false))
+                                    (error false))))))
+                          false true)))))
 #+end_src
 
 * ESP-IDF
@@ -589,11 +763,11 @@
                           (target (expand-file-name "compile_commands.json" root)))
                       (when (and (string-match-p "finished" msg)
                                  (file-exists-p cdb))
-                        (condition-case nil
+                        (condition-case false
                             (make-symbolic-link cdb target 'ok-if-already-exists)
-                          (error nil))
-                        (ignore-errors (lsp-workspace-restart nil))))))
-                nil t)))
+                          (error false))
+                        (ignore-errors (lsp-workspace-restart false))))))
+                false true)))
 
   (defun espidf-conditionally-enable ()
     (when-let ((root (projectile-project-root)))
@@ -601,10 +775,356 @@
                  (with-temp-buffer
                    (insert-file-contents (expand-file-name "CMakeLists.txt" root))
                    (goto-char (point-min))
-                   (search-forward "project.cmake" nil t)))
+                   (search-forward "project.cmake" false true)))
         (espidf-mode 1))))
 
   :hook (c-mode-common-hook . espidf-conditionally-enable))
+#+end_src
+
+* Dired
+#+begin_src emacs-lisp
+(use-package dired
+  :straight nil
+  :custom
+  (dired-listing-switches "-alh --group-directories-first")
+  (dired-dwim-target true)
+  :config
+  (setq insert-directory-program "/opt/homebrew/bin/gls")
+  :bind (:map dired-mode-map
+              ("C-j" . dired-next-line)
+              ("C-k" . dired-previous-line)
+              ("C-h" . dired-up-directory)
+              ("C-l" . dired-find-file)))
+
+(use-package nerd-icons-dired
+  :hook (dired-mode . nerd-icons-dired-mode))
+#+end_src
+
+* Buffer Management
+#+begin_src emacs-lisp
+  (use-package ibuffer
+    :straight nil
+    :config
+    (setq ibuffer-saved-filter-groups
+          '(("default"
+             ("Org"      (mode . org-mode))
+             ("C/C++"    (or (mode . c-mode)
+                             (mode . c++-mode)
+                             (mode . c-ts-mode)
+                             (mode . c++-ts-mode)))
+             ("Arduino"  (mode . arduino-mode))
+             ("Dired"    (mode . dired-mode))
+              ("Terminal" (or (mode . eat-mode) (mode . vterm-mode)))
+             ("Magit"    (name . "^\\*magit"))
+             ("Emacs"    (or (name . "^\\*scratch\\*$")
+                             (name . "^\\*Messages\\*$"))))))
+    (setq magit-repository-directories '(("~/Dev" . 2)))
+    (add-hook 'ibuffer-mode-hook
+              (lambda ()
+                (ibuffer-switch-to-saved-filter-groups "default"))))
+#+end_src
+
+* Terminal
+#+begin_src emacs-lisp
+(defun my/windows-p ()
+  "Return t if running on Windows."
+  (memq system-type '(ms-dos windows-nt cygwin)))
+
+(use-package eat
+  :if (my/windows-p)
+  :custom
+  (eat-kill-buffer-on-exit true)
+  :config
+  (eat-eshell-mode))
+
+(use-package vterm
+  :if (not (my/windows-p))
+  :straight t
+  :custom
+  (vterm-kill-buffer-on-exit t)
+  (vterm-max-scrollback 10000))
+
+(use-package popper
+  :bind (("C-`"   . popper-toggle))
+  :custom
+  (popper-reference-buffers
+   '("\\*\\(eat\\|vterm\\)\\*"
+     "\\*Help\\*"
+     "\\*helpful"
+     flycheck-error-list-mode
+     compilation-mode))
+  :config
+  (popper-mode 1))
+
+(defun my/terminal ()
+  "Start a terminal: vterm on macOS/Linux, eat on Windows."
+  (interactive)
+  (if (my/windows-p) (eat) (vterm)))
+
+(defun my/terminal-bottom ()
+  (interactive)
+  (let ((mode (if (my/windows-p) 'eat-mode 'vterm-mode))
+        (cmd (if (my/windows-p) #'eat #'vterm)))
+    (let ((display-buffer-alist
+           `(((derived-mode . ,mode)
+              (display-buffer-reuse-window display-buffer-at-bottom)
+              (window-height . 0.35))
+             ,@display-buffer-alist)))
+      (funcall cmd))))
+
+(defun my/terminal-left ()
+  (interactive)
+  (let ((mode (if (my/windows-p) 'eat-mode 'vterm-mode))
+        (cmd (if (my/windows-p) #'eat #'vterm)))
+    (let ((display-buffer-alist
+           `(((derived-mode . ,mode)
+              (display-buffer-in-side-window)
+              (side . left)
+              (window-width . 40))
+             ,@display-buffer-alist)))
+      (funcall cmd))))
+
+(defun my/terminal-right ()
+  (interactive)
+  (let ((mode (if (my/windows-p) 'eat-mode 'vterm-mode))
+        (cmd (if (my/windows-p) #'eat #'vterm)))
+    (let ((display-buffer-alist
+           `(((derived-mode . ,mode)
+              (display-buffer-in-side-window)
+              (side . right)
+              (window-width . 40))
+             ,@display-buffer-alist)))
+      (funcall cmd))))
+
+(defun my/terminal-fullscreen ()
+  (interactive)
+  (let ((cmd (if (my/windows-p) #'eat #'vterm)))
+    (delete-other-windows)
+    (funcall cmd)))
+
+(defun my/terminal-project ()
+  (interactive)
+  (if (my/windows-p)
+      (eat-project)
+    (projectile-run-vterm)))
+#+end_src
+
+* Eshell
+#+begin_src emacs-lisp
+;; Per-buffer polish when eshell starts
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (visual-line-mode +1)
+            (goto-address-mode +1)
+            (setq-local cursor-type 'bar
+                        show-trailing-whitespace nil)
+            (local-set-key (kbd "C-l")     #'eshell-bol)
+            (local-set-key (kbd "C-c C-o") #'eshell-kill-output)
+            (local-set-key (kbd "C-c C-l") #'eshell-list-history)
+            (local-set-key (kbd "C-c M-r") #'eshell-reset)
+            (local-set-key (kbd "q")       #'quit-window)))
+
+;; Prompt: short path relative to home, root-aware, highlighted
+(setq eshell-prompt-function
+      (lambda ()
+        (concat
+         (propertize
+          (concat
+           (let ((dir (eshell/pwd)))
+             (if (string= dir "~")
+                 "~"
+               (file-relative-name dir "~")))
+           (if (= (user-uid) 0) " # " " $ "))
+          'face 'font-lock-function-name-face)))
+      eshell-prompt-regexp "^[^#$\n]* [#$] "
+      eshell-highlight-prompt t
+      eshell-history-size 1000
+      eshell-list-files-after-cd t
+      eshell-cmpl-cycle-completions nil
+      eshell-save-history-on-exit t)
+#+end_src
+
+* Multimedia
+#+begin_src emacs-lisp
+(use-package emms
+  :straight t
+  :custom
+  (emms-source-file-default-directory "~/Music/Library/")
+  :config
+  (require 'emms-setup)
+  (emms-all)
+  (emms-default-players)
+  (setq emms-player-list '(emms-player-mpv)
+        emms-player-mpv-command-name "mpv"
+        emms-source-file-directory-tree-function
+        'emms-source-file-directory-tree-internal)
+  (evil-set-initial-state 'emms-browser-mode 'normal)
+  (evil-set-initial-state 'emms-playlist-mode 'normal)
+  (evil-set-initial-state 'emms-metaplaylist-mode 'normal)
+  (evil-set-initial-state 'emms-stream-mode 'normal))
+#+end_src
+
+* Podcasts
+#+begin_src emacs-lisp
+(use-package podcaster
+  :straight t
+  :commands podcaster
+  :custom
+  (podcaster-directory "~/Music/Podcasts/")
+  :config
+  ;; Route playback through EMMS + mpv instead of itunes/ffplay
+  (when (fboundp 'emms-play-url)
+    (advice-add 'podcaster--play-podcast :override
+                (lambda (_ item)
+                  (let ((url (plist-get item :mp3-url)))
+                    (emms-play-url url)
+                    (run-hook-with-args 'podcaster-play-podcast-hook item))))))
+#+end_src
+
+* PDF Tools
+#+begin_src emacs-lisp
+(use-package pdf-tools
+  :straight t
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :hook (pdf-view-mode-hook . (lambda () (display-line-numbers-mode -1)))
+  :config
+  (pdf-tools-install))
+#+end_src
+
+* Helpful
+#+begin_src emacs-lisp
+(use-package helpful
+  :bind
+  ([remap describe-function] . helpful-callable)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-key]      . helpful-key)
+  ([remap describe-command]  . helpful-command))
+#+end_src
+
+* Git
+#+begin_src emacs-lisp
+  (use-package magit)
+
+  (use-package magit-todos
+    :straight t
+    :after magit
+    :custom
+    (magit-todos-max-items 20)
+    (magit-todos-exclude-globs '(".git/" "node_modules/" "vendor/"))
+    :config
+    (magit-todos-mode 1))
+#+end_src
+
+* Forge
+#+begin_src emacs-lisp
+  (use-package forge
+    :after magit
+    :custom
+    (forge-alist '(("github.com" "github.com/api/v3" "github.com" forge-github-repository)))
+    (forge-owned-accounts '(("github.com" "damien-bafile")))
+    (forge-database-file (expand-file-name "forge-database.sqlite" user-emacs-directory))
+    (forge-add-default-bindings false))
+#+end_src
+
+* Email
+#+begin_src emacs-lisp
+(use-package mu4e
+  :straight nil
+  :ensure nil
+  :load-path "/usr/share/emacs/site-lisp/mu4e"
+  :commands mu4e
+  :init
+  (setq mu4e-maildir "~/.local/share/mail"
+        mu4e-mu-binary (executable-find "mu")
+        mu4e-get-mail-command "mbsync -a"
+        mu4e-update-interval 300
+        mu4e-headers-skip-duplicates true
+        mu4e-change-filenames-when-moving true
+        mu4e-attachment-dir "~/Downloads"
+        mu4e-compose-signature-auto-include false
+        mu4e-confirm-quit false
+        mu4e-context-policy 'pick-first
+        mu4e-compose-context-policy 'always-ask
+        message-kill-buffer-on-exit true
+        mail-user-agent 'mu4e-user-agent
+        sendmail-program (executable-find "msmtp")
+        message-sendmail-f-is-evil true
+        message-sendmail-extra-arguments '("--read-envelope-from")
+        message-send-mail-function 'message-send-mail-with-sendmail
+        send-mail-function 'message-send-mail-with-sendmail)
+  :config
+  (setq mu4e-contexts
+        (list
+         (make-mu4e-context
+          :name "gmail"
+          :match-func (lambda (msg) (when msg
+                                      (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address . "damnhatesyou@gmail.com")
+                  (user-full-name . "Damien Bafile")
+                  (mu4e-drafts-folder . "/gmail/[Gmail]/Drafts")
+                  (mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
+                  (mu4e-trash-folder . "/gmail/[Gmail]/Trash")
+                  (mu4e-refile-folder . "/gmail/[Gmail]/All Mail"))))))
+
+(defun dashboard-insert-mu4e-mail (_list-size)
+  "Insert mu4e inbox unread count into the dashboard."
+  (let ((count (condition-case false
+                   (let ((default-directory "~/.local/share/mail"))
+                     (with-temp-buffer
+                       (call-process "mu" false true false
+                                     "find" "maildir:/gmail/INBOX" "flag:unread")
+                       (count-lines (point-min) (point-max))))
+                 (error "?"))))
+    (dashboard-insert-heading "Email:")
+    (dashboard-insert-shortcut
+     (lambda (&rest _) (mu4e))
+     (format "Inbox (%s unread)" count)
+     "mail")))
+
+(with-eval-after-load 'dashboard
+  (add-to-list 'dashboard-item-generators
+                '(mu4e-mail . dashboard-insert-mu4e-mail)))
+#+end_src
+
+* Utilities
+#+begin_src emacs-lisp
+(defun my/project-run ()
+  "Run the current project based on its type.
+Rust:     cargo run
+PlatformIO: just deploy
+Python/uv:  uv run
+CMake:      just run"
+  (interactive)
+  (let ((root (projectile-project-root)))
+    (cond
+     ((and root (file-exists-p (expand-file-name "platformio.ini" root)))
+      (compile "just deploy"))
+     ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
+      (compile "cargo run"))
+     ((and root (file-exists-p (expand-file-name "uv.lock" root)))
+      (compile "uv run"))
+     ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
+      (compile "just run"))
+     (t
+      (projectile-compile-project)))))
+
+(defun my/reload-config ()
+  "Reload literate config.org."
+  (interactive)
+  (org-babel-load-file
+   (expand-file-name "config.org" user-emacs-directory))
+  (message "Config reloaded"))
+#+end_src
+
+* Matrix
+#+begin_src emacs-lisp
+(use-package ement
+  :straight t
+  :commands (ement-connect)
+  :custom
+  (ement-save-sessions true)
+  (ement-auto-sync true)
+  (ement-room-send-message-filter 'ement-room-send-org-filter))
 #+end_src
 
 * Org Mode
@@ -618,8 +1138,9 @@
     (org-default-notes-file "~/org/inbox.org")
     (org-agenda-files '("~/org"))
     (org-log-done 'time)
+    (org-src-fontify-natively true)
     (org-todo-keywords
-     '((sequence "TODO(t)" "IN-PROGRESS(i)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+     '((sequence "TODO(true)" "IN-PROGRESS(i)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
     (org-todo-keyword-faces
      '(("TODO"        . (:foreground "red"    :weight bold))
        ("IN-PROGRESS" . (:foreground "orange" :weight bold))
@@ -634,7 +1155,6 @@
        ("j" "Journal" entry (file+olp+datetree "~/org/journal.org")
         "* %?\nEntered on %U\n  %i\n  %a"))))
 
-
   (use-package org-superstar
     :after org
     :hook (org-mode . org-superstar-mode))
@@ -644,7 +1164,7 @@
     :custom
     (org-download-method 'directory)
     (org-download-image-dir "~/org/images")
-    (org-download-heading-lvl nil))
+    (org-download-heading-lvl false))
 #+end_src
 
 * Org Roam
@@ -668,148 +1188,28 @@
     :hook (org-mode . ws-butler-mode))
 #+end_src
 
-* Git
+* Session
 #+begin_src emacs-lisp
-  (use-package magit)
-#+end_src
-
-* Forge
-#+begin_src emacs-lisp
-  (use-package forge
-    :after magit
-    :custom
-    (forge-alist '(("github.com" "github.com/api/v3" "github.com" forge-github-repository)))
-    (forge-owned-accounts '(("github.com" "damien-bafile")))
-    (forge-database-file (expand-file-name "forge-database.sqlite" user-emacs-directory))
-    (forge-add-default-bindings nil))
-#+end_src
-
-* Terminal
-#+begin_src emacs-lisp
-(use-package eat
+(use-package recentf
+  :straight nil
+  :config
+  (recentf-mode enable-mode)
   :custom
-  (eat-kill-buffer-on-exit t)
+  (recentf-max-saved-items 100)
+  (recentf-max-menu-items 15))
+
+(use-package savehist
+  :straight nil
   :config
-  (eat-eshell-mode))
+  (savehist-mode enable-mode))
 
-(use-package popper
-  :bind (("C-`"   . popper-toggle))
-  :custom
-  (popper-reference-buffers
-   '("\\*eat\\*"
-     "\\*Help\\*"
-     "\\*helpful"
-     flycheck-error-list-mode
-     compilation-mode))
+(use-package saveplace
+  :straight nil
   :config
-  (popper-mode 1))
+  (save-place-mode enable-mode))
 
-(defun my/eat-bottom ()
-  (interactive)
-  (let ((display-buffer-alist
-         `(((derived-mode . eat-mode)
-            (display-buffer-reuse-window display-buffer-at-bottom)
-            (window-height . 0.35))
-           ,@display-buffer-alist)))
-    (eat)))
-
-(defun my/eat-left ()
-  (interactive)
-  (let ((display-buffer-alist
-         `(((derived-mode . eat-mode)
-            (display-buffer-in-side-window)
-            (side . left)
-            (window-width . 40))
-           ,@display-buffer-alist)))
-    (eat)))
-
-(defun my/eat-right ()
-  (interactive)
-  (let ((display-buffer-alist
-         `(((derived-mode . eat-mode)
-            (display-buffer-in-side-window)
-            (side . right)
-            (window-width . 40))
-           ,@display-buffer-alist)))
-    (eat)))
-
-(defun my/eat-fullscreen ()
-  (interactive)
-  (let ((display-buffer-alist
-         `(((derived-mode . eat-mode)
-            (display-buffer-same-window))
-           ,@display-buffer-alist)))
-    (delete-other-windows)
-    (eat)))
-#+end_src
-
-* Helpful
-#+begin_src emacs-lisp
-(use-package helpful
-  :bind
-  ([remap describe-function] . helpful-callable)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-key]      . helpful-key)
-  ([remap describe-command]  . helpful-command))
-#+end_src
-
-* Email
-#+begin_src emacs-lisp
-(use-package mu4e
-  :ensure nil
-  :load-path "/usr/share/emacs/site-lisp/mu4e"
-  :commands mu4e
-  :init
-  (setq mu4e-maildir "~/.local/share/mail"
-        mu4e-mu-binary (executable-find "mu")
-        mu4e-get-mail-command "mbsync -a"
-        mu4e-update-interval 300
-        mu4e-headers-skip-duplicates t
-        mu4e-change-filenames-when-moving t
-        mu4e-attachment-dir "~/Downloads"
-        mu4e-compose-signature-auto-include nil
-        mu4e-confirm-quit nil
-        mu4e-context-policy 'pick-first
-        mu4e-compose-context-policy 'always-ask
-        message-kill-buffer-on-exit t
-        mail-user-agent 'mu4e-user-agent
-        sendmail-program (executable-find "msmtp")
-        message-sendmail-f-is-evil t
-        message-sendmail-extra-arguments '("--read-envelope-from")
-        message-send-mail-function 'message-send-mail-with-sendmail
-        send-mail-function 'message-send-mail-with-sendmail)
-  :config
-  (setq mu4e-contexts
-        (list
-         (make-mu4e-context
-          :name "gmail"
-          :match-func (lambda (msg) (when msg
-                                      (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address . "damnhatesyou@gmail.com")
-                  (user-full-name . "Damien Bafile")
-                  (mu4e-drafts-folder . "/gmail/[Gmail]/Drafts")
-                  (mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
-                  (mu4e-trash-folder . "/gmail/[Gmail]/Trash")
-                  (mu4e-refile-folder . "/gmail/[Gmail]/All Mail"))))))
-
-(defun dashboard-insert-mu4e-mail (_list-size)
-  "Insert mu4e inbox unread count into the dashboard."
-  (let ((count (condition-case nil
-                   (let ((default-directory "~/.local/share/mail"))
-                     (with-temp-buffer
-                       (call-process "mu" nil t nil
-                                     "find" "maildir:/gmail/INBOX" "flag:unread")
-                       (count-lines (point-min) (point-max))))
-                 (error "?"))))
-    (dashboard-insert-heading "Email:")
-    (dashboard-insert-shortcut
-     (lambda (&rest _) (mu4e))
-     (format "Inbox (%s unread)" count)
-     "mail")))
-
-(with-eval-after-load 'dashboard
-  (add-to-list 'dashboard-item-generators
-               '(mu4e-mail . dashboard-insert-mu4e-mail)))
+(global-auto-revert-mode enable-mode)
+(column-number-mode enable-mode)
 #+end_src
 
 * Nix
@@ -834,8 +1234,9 @@
 * Keybindings
 #+begin_src emacs-lisp
   (use-package general
-    :after evil
+    :straight t
     :config
+    (general-override-mode 1)
     (general-create-definer leader-def
       :states '(normal visual motion emacs)
       :keymaps 'override
@@ -846,16 +1247,17 @@
       "SPC" '(execute-extended-command :wk "M-x")
 
       ;; Files
-      "f"   '(:ignore t                         :wk "files")
+      "f"   '(:ignore true                         :wk "files")
       "ff"  '(find-file                         :wk "find file")
       "fr"  '(consult-recent-file               :wk "recent files")
       "fs"  '(save-buffer                       :wk "save")
       "fd"  '(dired                             :wk "dired")
+      "fD"  '(projectile-dired                  :wk "project dired")
       "fe"  '((lambda () (interactive)
                 (find-file user-emacs-directory)) :wk "open config dir")
 
       ;; Buffers
-      "b"   '(:ignore t                         :wk "buffers")
+      "b"   '(:ignore true                         :wk "buffers")
       "bb"  '(consult-buffer                    :wk "switch buffer")
       "bi"  '(ibuffer                           :wk "ibuffer")
       "bk"  '(kill-current-buffer                  :wk "kill buffer")
@@ -863,19 +1265,19 @@
       "bp"  '(previous-buffer                   :wk "prev buffer")
 
       ;; Search
-      "s"   '(:ignore t                         :wk "search")
+      "s"   '(:ignore true                         :wk "search")
       "ss"  '(consult-line                      :wk "search buffer")
       "sd"  '(consult-ripgrep                   :wk "search directory")
       "si"  '(consult-imenu                     :wk "search symbols")
 
       ;; Jump
-      "j"   '(:ignore t                         :wk "jump")
+      "j"   '(:ignore true                         :wk "jump")
       "jj"  '(avy-goto-char-timer               :wk "jump to char")
       "jl"  '(avy-goto-line                     :wk "jump to line")
       "jw"  '(avy-goto-word-0                   :wk "jump to word")
 
       ;; Windows
-      "w"   '(:ignore t                         :wk "windows")
+      "w"   '(:ignore true                         :wk "windows")
       "wv"  '(split-window-right                :wk "split vertical")
       "ws"  '(split-window-below                :wk "split horizontal")
       "wd"  '(delete-window                     :wk "close window")
@@ -891,22 +1293,41 @@
       "wo"  '(delete-other-windows              :wk "maximize")
       "wu"  '(winner-undo                       :wk "restore windows")
 
-      ;; Tabs / Workspaces
-      "TAB"   '(:ignore t                         :wk "tabs")
-      "TAB ." '(tabspaces-open-or-create-project-and-workspace :wk "switch workspace")
-      "TAB n" '(tab-bar-new-tab                   :wk "new workspace")
-      "TAB k" '(tabspaces-close-workspace         :wk "close workspace")
-      "TAB l" '(tabspaces-switch-to-buffer        :wk "buffers in tab")
-      "TAB r" '(tab-bar-rename-tab                :wk "rename workspace")
+      ;; Tabs / Workspaces (Doom-style)
+      "TAB"     '(:ignore true                               :wk "workspace")
+      "TAB TAB" '(my/workspace-display                       :wk "display workspaces")
+      "TAB n"   '(my/workspace-new                           :wk "new workspace")
+      "TAB N"   '(my/workspace-new-named                     :wk "new named workspace")
+      "TAB ."   '(my/workspace-switch-by-name                :wk "switch workspace")
+      "TAB `"   '(my/workspace-cycle                         :wk "other workspace")
+      "TAB ["   '(my/workspace-cycle -1                      :wk "previous workspace")
+      "TAB ]"   '(my/workspace-cycle 1                       :wk "next workspace")
+      "TAB 1"   '((lambda () (interactive) (my/workspace-switch-to 0)) :wk "workspace 1")
+      "TAB 2"   '((lambda () (interactive) (my/workspace-switch-to 1)) :wk "workspace 2")
+      "TAB 3"   '((lambda () (interactive) (my/workspace-switch-to 2)) :wk "workspace 3")
+      "TAB 4"   '((lambda () (interactive) (my/workspace-switch-to 3)) :wk "workspace 4")
+      "TAB 5"   '((lambda () (interactive) (my/workspace-switch-to 4)) :wk "workspace 5")
+      "TAB 6"   '((lambda () (interactive) (my/workspace-switch-to 5)) :wk "workspace 6")
+      "TAB 7"   '((lambda () (interactive) (my/workspace-switch-to 6)) :wk "workspace 7")
+      "TAB 8"   '((lambda () (interactive) (my/workspace-switch-to 7)) :wk "workspace 8")
+      "TAB 9"   '((lambda () (interactive) (my/workspace-switch-to 8)) :wk "workspace 9")
+      "TAB 0"   '(my/workspace-switch-final                  :wk "last workspace")
+      "TAB d"   '(my/workspace-kill                          :wk "kill workspace")
+      "TAB r"   '(my/workspace-rename                        :wk "rename workspace")
+      "TAB s"   '(my/workspace-save                          :wk "save workspace")
+      "TAB l"   '(my/workspace-load                          :wk "load workspace")
+      "TAB R"   '(my/workspace-restore-last                  :wk "restore session")
 
       ;; Project
-      "p"   '(:ignore t                         :wk "project")
+      "p"   '(:ignore true                         :wk "project")
       "pp"  '(consult-projectile                :wk "switch project")
       "pf"  '(consult-projectile-find-file       :wk "find file")
-      "ps"  '(consult-projectile-ripgrep         :wk "search project")
+      "pb"  '(projectile-compile-project        :wk "build project")
+      "pr"  '(my/project-run                     :wk "run project")
+      "ps"  '(consult-ripgrep                    :wk "search project")
 
       ;; Git
-      "g"   '(:ignore t                         :wk "git")
+      "g"   '(:ignore true                         :wk "git")
       "gg"  '(magit-status                      :wk "magit status")
       "gb"  '(magit-blame                       :wk "magit blame")
       "gl"  '(magit-log-current                 :wk "magit log")
@@ -917,7 +1338,7 @@
       "gB"  '(forge-browse                      :wk "browse repo")
 
       ;; LSP
-      "l"   '(:ignore t                         :wk "lsp")
+      "l"   '(:ignore true                         :wk "lsp")
       "ld"  '(lsp-find-definition               :wk "find definition")
       "lD"  '(lsp-find-declaration              :wk "find declaration")
       "lr"  '(lsp-find-references               :wk "find references")
@@ -928,13 +1349,13 @@
       "lR"  '(lsp-workspace-restart             :wk "restart lsp")
 
       ;; Errors (flycheck)
-      "e"   '(:ignore t                         :wk "errors")
+      "e"   '(:ignore true                         :wk "errors")
       "el"  '(flycheck-list-errors              :wk "list errors")
       "en"  '(flycheck-next-error               :wk "next error")
       "ep"  '(flycheck-previous-error           :wk "prev error")
 
       ;; Debugging
-      "d"   '(:ignore t                         :wk "debug")
+      "d"   '(:ignore true                         :wk "debug")
       "dd"  '(dap-debug                         :wk "start debug")
       "db"  '(dap-breakpoint-toggle             :wk "toggle breakpoint")
       "dc"  '(dap-continue                      :wk "continue")
@@ -945,16 +1366,16 @@
       "dr"  '(dap-debug-restart                 :wk "restart debug")
 
       ;; Terminal
-      "t"   '(:ignore t                         :wk "terminal")
+      "t"   '(:ignore true                         :wk "terminal")
       "tt"  '(popper-toggle                     :wk "toggle popup")
-      "tb"  '(my/eat-bottom                     :wk "terminal bottom")
-      "tl"  '(my/eat-left                       :wk "terminal left")
-      "tr"  '(my/eat-right                      :wk "terminal right")
-      "tf"  '(my/eat-fullscreen                 :wk "terminal fullscreen")
-      "tp"  '(eat-project                       :wk "terminal project")
+      "tb"  '(my/terminal-bottom                :wk "terminal bottom")
+      "tl"  '(my/terminal-left                  :wk "terminal left")
+      "tr"  '(my/terminal-right                 :wk "terminal right")
+      "tf"  '(my/terminal-fullscreen            :wk "terminal fullscreen")
+      "tp"  '(my/terminal-project               :wk "terminal project")
 
       ;; Org
-      "o"   '(:ignore t                         :wk "org")
+      "o"   '(:ignore true                         :wk "org")
       "oa"  '(org-agenda                        :wk "agenda")
       "oc"  '(org-capture                       :wk "capture")
       "ot"  '(org-todo                          :wk "toggle todo")
@@ -962,7 +1383,7 @@
       "od"  '(org-deadline                      :wk "deadline")
 
       ;; Org Roam
-      "or"  '(:ignore t                         :wk "roam")
+      "or"  '(:ignore true                         :wk "roam")
       "orf" '(consult-org-roam-file-find         :wk "find node")
       "ori" '(org-roam-node-insert              :wk "insert link")
       "orb" '(org-roam-buffer-toggle            :wk "backlinks")
@@ -972,20 +1393,34 @@
       "orc" '(org-roam-dailies-capture-today    :wk "capture to journal")
 
       ;; Mail
-      "m"   '(:ignore t                         :wk "mail")
+      "m"   '(:ignore true                         :wk "mail")
       "mm"  '(mu4e                              :wk "mu4e")
       "mu"  '(mu4e-update-mail-and-index        :wk "sync mail")
       "mc"  '(mu4e-compose-new                  :wk "compose")
 
+      ;; Matrix
+      "C"   '(:ignore true                         :wk "matrix")
+      "Cm"  '(ement-connect                     :wk "connect")
+
+      ;; Media
+      "M"   '(:ignore true                         :wk "media")
+      "Mm"  '(emms                              :wk "emms")
+      "Mp"  '(emms-pause                        :wk "play/pause")
+      "Mn"  '(emms-next                         :wk "next")
+      "Mv"  '(emms-previous                     :wk "previous")
+      "Ms"  '(emms-stop                         :wk "stop")
+      "Mb"  '(emms-browser                      :wk "browse music")
+      "Mc"  '(podcaster                         :wk "podcaster")
+
       ;; Arduino
-      "a"   '(:ignore t                         :wk "arduino")
-      "ac"  '(arduino-cli-compile               :wk "compile")
-      "au"  '(arduino-cli-upload                :wk "upload")
-      "am"  '(arduino-cli-compile-and-upload    :wk "compile & upload")
-       "as"  '(arduino-cli-serial-monitor        :wk "serial monitor")
+      "A"   '(:ignore true                         :wk "arduino")
+      "Ac"  '(arduino-cli-compile               :wk "compile")
+      "Au"  '(arduino-cli-upload                :wk "upload")
+      "Am"  '(arduino-cli-compile-and-upload    :wk "compile & upload")
+      "As"  '(arduino-cli-serial-monitor        :wk "serial monitor")
 
       ;; PlatformIO
-      "P"   '(:ignore t                         :wk "platformio")
+      "P"   '(:ignore true                         :wk "platformio")
       "Pb"  '(platformio-build                  :wk "build")
       "Pu"  '(platformio-upload                 :wk "upload")
       "Pm"  '(platformio-device-monitor         :wk "serial monitor")
@@ -994,7 +1429,7 @@
       "Pl"  '(platformio-boards                 :wk "list boards")
 
       ;; ESP-IDF
-      "I"   '(:ignore t                         :wk "espidf")
+      "I"   '(:ignore true                         :wk "espidf")
       "Ib"  '(espidf-build                      :wk "build")
       "Iu"  '(espidf-flash                      :wk "flash")
       "Im"  '(espidf-monitor                    :wk "monitor")
@@ -1002,18 +1437,32 @@
       "Ic"  '(espidf-clean                      :wk "fullclean")
       "Ir"  '(espidf-reconfigure                :wk "reconfigure")
 
+      ;; IRC
+      "i"   '(:ignore true                         :wk "irc")
+      "ii"  '(erc                                 :wk "connect")
+      "it"  '(my/erc-tls                          :wk "connect TLS")
+      "ij"  '(my/erc-join                         :wk "join channel")
+      "iq"  '(erc-quit-server                     :wk "quit")
+      "ir"  '(erc-reconnect                       :wk "reconnect")
+
       ;; Undo
       "u"   '(undo-tree-visualize               :wk "undo tree")
 
+      ;; Emacs
+      "E"   '(:ignore true                         :wk "emacs")
+      "Ep"  '(straight-pull-all                 :wk "pull all packages")
+      "Er"  '(straight-rebuild-all              :wk "rebuild all packages")
+      "ER"  '(my/reload-config                   :wk "reload config")
+
       ;; Help
-      "h"   '(:ignore t                         :wk "help")
+      "h"   '(:ignore true                         :wk "help")
       "hf"  '(describe-function                 :wk "describe function")
       "hk"  '(describe-key                      :wk "describe key")
       "hv"  '(describe-variable                 :wk "describe variable")
       "hm"  '(describe-mode                     :wk "describe mode")
 
       ;; Quit
-      "q"   '(:ignore t                         :wk "quit")
+      "q"   '(:ignore true                         :wk "quit")
       "qq"  '(my/delete-frame-or-kill-emacs     :wk "quit")
       "qr"  '(restart-emacs                     :wk "restart emacs")))
 #+end_src
