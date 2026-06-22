@@ -1102,7 +1102,7 @@ CMake:      just run"
      ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
       (compile "cargo run"))
      ((and root (file-exists-p (expand-file-name "uv.lock" root)))
-      (compile (read-shell-command "Run: " "uv run ")))
+      (compile (read-shell-command "Run: " "uv run python main.py")))
      ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
       (compile "just run"))
      (t
