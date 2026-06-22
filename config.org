@@ -1122,7 +1122,7 @@ CMake:      just build"
      ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
       (compile "cargo build"))
      ((and root (file-exists-p (expand-file-name "uv.lock" root)))
-      (compile "uv sync"))
+      (compile "uv sync && uv build"))
      ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
       (compile "just build"))
      (t
