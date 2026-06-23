@@ -1513,4 +1513,10 @@ CMake:      just build"
       "C-<right>" '(windmove-right              :wk "move right")
       "C-<down>"  '(windmove-down               :wk "move down")
       "C-<up>"    '(windmove-up                 :wk "move up"))
+
+    ;; ? shows major mode keybindings (evil-aware via which-key)
+    (general-def
+      :states '(normal visual)
+      :keymaps 'override
+      "?"  '(which-key-show-major-mode              :wk "show major mode keys"))
 #+end_src
