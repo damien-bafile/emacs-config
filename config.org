@@ -1508,5 +1508,5 @@ CMake:      just build"
       "C-<left>"  '(windmove-left               :wk "move left")
       "C-<right>" '(windmove-right              :wk "move right")
       "C-<down>"  '(windmove-down               :wk "move down")
-      "C-<up>"    '(windmove-up                 :wk "move up")))
+      "C-<up>"    '(windmove-up                 :wk "move up"))
 #+end_src
