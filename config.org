@@ -791,7 +791,7 @@
   (dired-listing-switches "-alh --group-directories-first")
   (dired-dwim-target true)
   :config
-  (setq insert-directory-program "/opt/homebrew/bin/gls")
+  (setq insert-directory-program "ls")
   :bind (:map dired-mode-map
               ("C-j" . dired-next-line)
               ("C-k" . dired-previous-line)

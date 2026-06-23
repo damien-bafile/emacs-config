@@ -1,4 +1,4 @@
-;; init.el
+;; init.el --- Emacs init file -*- lexical-binding: t -*-
 
 ;; Suppress byte-compiler noise from third-party packages
 (setq byte-compile-warnings '(not docstrings docstrings-control-chars
