@@ -798,6 +798,9 @@
   (dired-dwim-target true)
   :config
   (setq insert-directory-program "ls")
+  (evil-define-key 'normal dired-mode-map
+    "h" #'dired-up-directory
+    "l" #'dired-find-file)
   :bind (:map dired-mode-map
               ("C-j" . dired-next-line)
               ("C-k" . dired-previous-line)
