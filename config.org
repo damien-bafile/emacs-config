@@ -800,7 +800,9 @@
   (setq insert-directory-program "ls")
   (evil-define-key 'normal dired-mode-map
     "h" #'dired-up-directory
-    "l" #'dired-find-file)
+    "l" #'dired-find-file
+    "yy" #'dired-copy-filename-as-kill
+    "pp" #'dired-do-copy)
   :bind (:map dired-mode-map
               ("C-j" . dired-next-line)
               ("C-k" . dired-previous-line)
