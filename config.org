@@ -553,7 +553,11 @@
       :activation-fn (lsp-activate-on "python")
       :server-id 'pyright
       :priority 1)))
-  (use-package lsp-ui
+  (evil-define-key 'normal lsp-mode-map
+    (kbd "gd") #'lsp-find-definition
+    (kbd "gi") #'lsp-find-implementation))
+
+(use-package lsp-ui
   :after lsp-mode
   :custom
   (lsp-ui-doc-enable true)
