@@ -1462,9 +1462,6 @@ CMake:      just build"
       "iq"  '(erc-quit-server                     :wk "quit")
       "ir"  '(erc-reconnect                       :wk "reconnect")
 
-      ;; Undo
-      "u"   '(undo-tree-visualize               :wk "undo tree")
-
       ;; Emacs
       "E"   '(:ignore true                         :wk "emacs")
       "Ec"  '(:ignore true                         :wk "clear")
@@ -1510,6 +1507,7 @@ CMake:      just build"
       "["  '(flycheck-previous-error            :wk "prev diagnostic")
       "]"  '(flycheck-next-error                :wk "next diagnostic")
       "O"  '(consult-imenu                      :wk "outline")
+      "u"  '(undo-tree-visualize                :wk "undo tree")
       "x"  '(browse-url-at-point                :wk "open url")
       "c"  '(evil-commentary                    :wk "toggle comment")
       "s"  '(:ignore t                          :wk "surround")
