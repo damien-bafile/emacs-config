@@ -1,6 +1,6 @@
 * File Header
 #+begin_src emacs-lisp :padline no
-;;; config.el --- Emacs configuration -*- lexical-binding: true -*-
+;;; config.el --- Emacs configuration -*- lexical-binding: t -*-
 #+end_src
 
 * Mode Variables
@@ -151,6 +151,12 @@
   :after evil
   :config
   (global-evil-surround-mode enable-mode))
+
+(use-package evil-commentary
+  :straight t
+  :after evil
+  :config
+  (evil-commentary-mode))
 
 (use-package undo-tree
   :after evil
@@ -547,11 +553,7 @@
       :activation-fn (lsp-activate-on "python")
       :server-id 'pyright
       :priority 1)))
-  (evil-define-key 'normal lsp-mode-map
-    (kbd "gd") #'lsp-find-definition
-    (kbd "gi") #'lsp-find-implementation))
-
-(use-package lsp-ui
+  (use-package lsp-ui
   :after lsp-mode
   :custom
   (lsp-ui-doc-enable true)
@@ -1482,4 +1484,36 @@ CMake:      just build"
       "q"   '(:ignore true                         :wk "quit")
       "qq"  '(my/delete-frame-or-kill-emacs     :wk "quit")
       "qr"  '(restart-emacs                     :wk "restart emacs")))
+
+    ;; Ctrl+arrow window switching
+    (general-def
+      :states '(normal visual insert emacs)
+      :keymaps 'override
+      "C-<left>"  '(windmove-left               :wk "move left")
+      "C-<right>" '(windmove-right              :wk "move right")
+      "C-<down>"  '(windmove-down               :wk "move down")
+      "C-<up>"    '(windmove-up                 :wk "move up"))
+
+    ;; LazyVim-style g prefix menu
+    (general-create-definer my-g-prefix
+      :states '(normal visual)
+      :keymaps 'override
+      :prefix "g")
+
+    (my-g-prefix
+      "d"  '(lsp-find-definition                :wk "goto definition")
+      "D"  '(lsp-find-declaration               :wk "goto declaration")
+      "i"  '(lsp-find-implementation            :wk "goto implementation")
+      "r"  '(lsp-find-references                :wk "goto references")
+      "h"  '(lsp-describe-thing-at-point        :wk "hover docs")
+      "l"  '(flycheck-list-errors               :wk "line diagnostics")
+      "["  '(flycheck-previous-error            :wk "prev diagnostic")
+      "]"  '(flycheck-next-error                :wk "next diagnostic")
+      "O"  '(consult-imenu                      :wk "outline")
+      "x"  '(browse-url-at-point                :wk "open url")
+      "c"  '(evil-commentary                    :wk "toggle comment")
+      "s"  '(:ignore t                          :wk "surround")
+      "ss" '(evil-surround-edit                 :wk "add surround")
+      "sd" '(evil-surround-delete               :wk "delete surround")
+      "sc" '(evil-surround-change               :wk "change surround")))
 #+end_src
