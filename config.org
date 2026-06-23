@@ -142,6 +142,7 @@
   (evil-mode enable-mode))
 
 (use-package evil-collection
+  :straight t
   :after evil
   :config
   (evil-collection-init))
@@ -262,131 +263,131 @@
 
 * Workspaces
 #+begin_src emacs-lisp
-(use-package persp-mode
-  :after projectile
-  :hook (after-init . persp-mode)
-  :custom
-  (persp-autokill-buffer-on-remove 'kill-weak)
-  (persp-add buffer-predicate nil)
-  (persp-auto-save-opt 1)
-  (persp-auto-save-persp-name "main")
-  (persp-save-dir (expand-file-name "persp-confs" user-emacs-directory))
-  (persp-modestring-use-layouts-name t)
-  :config
-  ;; Don't kill scratch buffer when switching workspaces
-  (add-hook 'persp-after-switch-functions
-            (lambda (&rest _)
-              (when (get-buffer "*scratch*")
-                (persp-add-buffer "*scratch*")))))
+  (use-package persp-mode
+    :after projectile
+    :hook (after-init . persp-mode)
+    :custom
+    (persp-autokill-buffer-on-remove 'kill-weak)
+    (persp-add buffer-predicate nil)
+    (persp-auto-save-opt 1)
+    (persp-auto-save-persp-name "main")
+    (persp-save-dir (expand-file-name "persp-confs" user-emacs-directory))
+    (persp-modestring-use-layouts-name t)
+    :config
+    ;; Don't kill scratch buffer when switching workspaces
+    (add-hook 'persp-after-switch-functions
+              (lambda (&rest _)
+                (when (get-buffer "*scratch*")
+                  (persp-add-buffer "*scratch*")))))
 
-;; Doom-style workspace helpers built on persp-mode
-(unless (fboundp 'persp-list)
-  (defun persp-list ()
-    "Return a list of all perspective objects."
-    (mapcar #'persp-get-by-name (persp-names))))
+  ;; Doom-style workspace helpers built on persp-mode
+  (unless (fboundp 'persp-list)
+    (defun persp-list ()
+      "Return a list of all perspective objects."
+      (delq nil (mapcar #'persp-get-by-name (persp-names))))) ;
 
-(defun my/workspace-display ()
-  "Display open workspaces in the echo area."
-  (interactive)
-  (let* ((names (mapcar #'persp-name (persp-list)))
-         (current (persp-name (persp-current)))
-         (formatted (mapcar (lambda (name)
-                              (if (string= name current)
-                                  (propertize (format "[%s]" name) 'face 'bold)
-                                name))
-                            names)))
-    (message "Workspaces: %s" (string-join formatted " "))))
+  (defun my/workspace-display ()
+    "Display open workspaces in the echo area."
+    (interactive)
+    (let* ((names (mapcar #'persp-name (persp-list)))
+           (current (persp-name (persp-current)))
+           (formatted (mapcar (lambda (name)
+                                (if (string= name current)
+                                    (propertize (format "[%s]" name) 'face 'bold)
+                                  name))
+                              names)))
+      (message "Workspaces: %s" (string-join formatted " "))))
 
-(defun my/workspace-new ()
-  "Create a new blank workspace."
-  (interactive)
-  (let ((name (format "#%d" (1+ (length (persp-list))))))
+  (defun my/workspace-new ()
+    "Create a new blank workspace."
+    (interactive)
+    (let ((name (format "#%d" (1+ (length (persp-list))))))
+      (persp-switch name)
+      (my/workspace-display)))
+
+  (defun my/workspace-new-named (name)
+    "Create a new workspace with NAME."
+    (interactive "sWorkspace name: ")
     (persp-switch name)
-    (my/workspace-display)))
+    (my/workspace-display))
 
-(defun my/workspace-new-named (name)
-  "Create a new workspace with NAME."
-  (interactive "sWorkspace name: ")
-  (persp-switch name)
-  (my/workspace-display))
+  (defun my/workspace-switch-to (index)
+    "Switch to workspace at INDEX (0-based)."
+    (interactive "nWorkspace index: ")
+    (let ((persps (persp-list)))
+      (when (< index (length persps))
+        (persp-switch (persp-name (nth index persps))))))
 
-(defun my/workspace-switch-to (index)
-  "Switch to workspace at INDEX (0-based)."
-  (interactive "nWorkspace index: ")
-  (let ((persps (persp-list)))
-    (when (< index (length persps))
-      (persp-switch (persp-name (nth index persps))))))
+  (defun my/workspace-switch-by-name ()
+    "Switch to a workspace by name via completing-read."
+    (interactive)
+    (let ((names (mapcar #'persp-name (persp-list))))
+      (when names
+        (persp-switch (completing-read "Workspace: " names nil t)))))
 
-(defun my/workspace-switch-by-name ()
-  "Switch to a workspace by name via completing-read."
-  (interactive)
-  (let ((names (mapcar #'persp-name (persp-list))))
-    (when names
-      (persp-switch (completing-read "Workspace: " names nil t)))))
+  (defun my/workspace-switch-final ()
+    "Switch to the last workspace."
+    (interactive)
+    (let ((persps (persp-list)))
+      (when persps
+        (persp-switch (persp-name (car (last persps)))))))
 
-(defun my/workspace-switch-final ()
-  "Switch to the last workspace."
-  (interactive)
-  (let ((persps (persp-list)))
-    (when persps
-      (persp-switch (persp-name (car (last persps)))))))
+  (defun my/workspace-cycle (direction)
+    "Cycle workspaces in DIRECTION (+1 forward, -1 backward)."
+    (interactive "p")
+    (let* ((persps (persp-list))
+           (current-index (cl-position (persp-current) :test #'eq))
+           (next-index (mod (+ current-index direction) (length persps))))
+      (persp-switch (persp-name (nth next-index persps)))))
 
-(defun my/workspace-cycle (direction)
-  "Cycle workspaces in DIRECTION (+1 forward, -1 backward)."
-  (interactive "p")
-  (let* ((persps (persp-list))
-         (current-index (cl-position (persp-current) :test #'eq))
-         (next-index (mod (+ current-index direction) (length persps))))
-    (persp-switch (persp-name (nth next-index persps)))))
+  (defun my/workspace-kill ()
+    "Kill the current workspace (switch to first if last)."
+    (interactive)
+    (when (> (length (persp-list)) 1)
+      (persp-kill (persp-name (persp-current)))))
 
-(defun my/workspace-kill ()
-  "Kill the current workspace (switch to first if last)."
-  (interactive)
-  (when (> (length (persp-list)) 1)
-    (persp-kill (persp-name (persp-current)))))
+  (defun my/workspace-rename ()
+    "Rename the current workspace."
+    (interactive)
+    (let ((new-name (read-string "New name: " (persp-name (persp-current)))))
+      (persp-rename new-name (persp-current))
+      (my/workspace-display)))
 
-(defun my/workspace-rename ()
-  "Rename the current workspace."
-  (interactive)
-  (let ((new-name (read-string "New name: " (persp-name (persp-current)))))
-    (persp-rename new-name (persp-current))
-    (my/workspace-display)))
+  (defun my/workspace-move-buffer-left ()
+    "Move current buffer to the previous workspace."
+    (interactive)
+    (let* ((persps (persp-list))
+           (current-index (cl-position (persp-current) :test #'eq))
+           (target-index (mod (1- current-index) (length persps)))
+           (target (nth target-index persps)))
+      (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+      (persp-add-buffer (current-buffer) target nil nil)))
 
-(defun my/workspace-move-buffer-left ()
-  "Move current buffer to the previous workspace."
-  (interactive)
-  (let* ((persps (persp-list))
-         (current-index (cl-position (persp-current) :test #'eq))
-         (target-index (mod (1- current-index) (length persps)))
-         (target (nth target-index persps)))
-    (persp-remove-buffer (current-buffer) (persp-current) nil nil)
-    (persp-add-buffer (current-buffer) target nil nil)))
+  (defun my/workspace-move-buffer-right ()
+    "Move current buffer to the next workspace."
+    (interactive)
+    (let* ((persps (persp-list))
+           (current-index (cl-position (persp-current) :test #'eq))
+           (target-index (mod (1+ current-index) (length persps)))
+           (target (nth target-index persps)))
+      (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+      (persp-add-buffer (current-buffer) target nil nil)))
 
-(defun my/workspace-move-buffer-right ()
-  "Move current buffer to the next workspace."
-  (interactive)
-  (let* ((persps (persp-list))
-         (current-index (cl-position (persp-current) :test #'eq))
-         (target-index (mod (1+ current-index) (length persps)))
-         (target (nth target-index persps)))
-    (persp-remove-buffer (current-buffer) (persp-current) nil nil)
-    (persp-add-buffer (current-buffer) target nil nil)))
+  (defun my/workspace-save ()
+    "Save the current workspace session to file."
+    (interactive)
+    (persp-save-state-to-file)
+    (message "Workspace saved"))
 
-(defun my/workspace-save ()
-  "Save the current workspace session to file."
-  (interactive)
-  (persp-save-state-to-file)
-  (message "Workspace saved"))
+  (defun my/workspace-load ()
+    "Load a saved workspace session from file."
+    (interactive)
+    (persp-load-state-from-file))
 
-(defun my/workspace-load ()
-  "Load a saved workspace session from file."
-  (interactive)
-  (persp-load-state-from-file))
-
-(defun my/workspace-restore-last ()
-  "Restore the last saved session."
-  (interactive)
-  (persp-load-state-from-file))
+  (defun my/workspace-restore-last ()
+    "Restore the last saved session."
+    (interactive)
+    (persp-load-state-from-file))
 #+end_src
 
 * IRC (ERC)
@@ -607,18 +608,21 @@
           dap-python-executable (executable-find "python"))))
 #+end_src
 
-* TODO Highlights
+* TODO
 #+begin_src emacs-lisp
-(use-package hl-todo
-  :hook ((prog-mode . hl-todo-mode)
-         (org-mode  . hl-todo-mode))
-  :custom
-  (hl-todo-keyword-faces
-   '(("TODO"   . "#cc241d")
-     ("FIXME"  . "#d79921")
-     ("HACK"   . "#b16286")
-     ("NOTE"   . "#458588")
-     ("WARN"   . "#d65d0e"))))
+  (use-package hl-todo
+    :hook ((prog-mode . hl-todo-mode)
+           (org-mode  . hl-todo-mode))
+    :custom
+    (hl-todo-keyword-faces
+     '(("TODO"   . "#cc241d")
+       ("FIXME"  . "#d79921")
+       ("HACK"   . "#b16286")
+       ("NOTE"   . "#458588")
+       ("WARN"   . "#d65d0e"))))
+
+  (use-package consult-lisp
+    :after (consult hl-todo))
 #+end_src
 
 * C / C++
@@ -1299,7 +1303,7 @@ CMake:      just build"
       "w,"  '(evil-window-decrease-height      :wk "shrink height")
       "w>"  '(evil-window-increase-width       :wk "enlarge width")
       "w<"  '(evil-window-decrease-width       :wk "shrink width")
-      "wo"  '(delete-other-windows              :wk "maximize")
+      "wD"  '(delete-other-windows              :wk "maximize")
       "wu"  '(winner-undo                       :wk "restore windows")
 
       ;; Tabs / Workspaces (Doom-style)
@@ -1362,6 +1366,10 @@ CMake:      just build"
       "el"  '(flycheck-list-errors              :wk "list errors")
       "en"  '(flycheck-next-error               :wk "next error")
       "ep"  '(flycheck-previous-error           :wk "prev error")
+
+      ;; TODO
+      "st"  '(consult-todo                      :wk "todos in buffer")
+      "sT"  '(consult-todo-all                  :wk "todos everywhere")
 
       ;; Debugging
       "d"   '(:ignore true                         :wk "debug")
@@ -1459,9 +1467,11 @@ CMake:      just build"
 
       ;; Emacs
       "E"   '(:ignore true                         :wk "emacs")
+      "Ec"  '(:ignore true                         :wk "clear")
+      "Ecm" '(erase-messages                      :wk "clear messages")
       "Ep"  '(straight-pull-all                 :wk "pull all packages")
       "Er"  '(straight-rebuild-all              :wk "rebuild all packages")
-      "ER"  '(my/reload-config                   :wk "reload config")
+      "ER"  '(my/reload-config                   :wk "reload config") ;
 
       ;; Help
       "h"   '(:ignore true                         :wk "help")
