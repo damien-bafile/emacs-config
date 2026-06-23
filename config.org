@@ -621,8 +621,6 @@
        ("NOTE"   . "#458588")
        ("WARN"   . "#d65d0e"))))
 
-  (use-package consult-lisp
-    :after (consult hl-todo))
 #+end_src
 
 * C / C++
