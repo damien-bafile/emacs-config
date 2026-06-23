@@ -277,7 +277,7 @@
     (persp-add buffer-predicate nil)
     (persp-auto-save-opt 1)
     (persp-auto-save-persp-name "main")
-    (persp-save-dir (expand-file-name "persp-confs" user-emacs-directory))
+    (persp-save-dir (expand-file-name "persp-confs/" user-emacs-directory))
     (persp-modestring-use-layouts-name t)
     :config
     ;; Don't kill scratch buffer when switching workspaces
