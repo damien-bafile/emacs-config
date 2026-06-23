@@ -154,7 +154,7 @@
 
 (use-package evil-commentary
   :straight t
-  :after evil
+  :after (evil org)
   :config
   (evil-commentary-mode))
 
