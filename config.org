@@ -555,7 +555,9 @@
       :priority 1)))
   (evil-define-key 'normal lsp-mode-map
     (kbd "gd") #'lsp-find-definition
-    (kbd "gi") #'lsp-find-implementation))
+    (kbd "gi") #'lsp-find-implementation
+    (kbd "gr") #'lsp-find-references
+    (kbd "gD") #'lsp-find-declaration))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -1334,9 +1336,6 @@ CMake:      just build"
       "TAB 0"   '(my/workspace-switch-final                  :wk "last workspace")
       "TAB d"   '(my/workspace-kill                          :wk "kill workspace")
       "TAB r"   '(my/workspace-rename                        :wk "rename workspace")
-      "TAB s"   '(my/workspace-save                          :wk "save workspace")
-      "TAB l"   '(my/workspace-load                          :wk "load workspace")
-      "TAB R"   '(my/workspace-restore-last                  :wk "restore session")
 
       ;; Project
       "p"   '(:ignore true                         :wk "project")
