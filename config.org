@@ -275,7 +275,7 @@
     :custom
     (persp-autokill-buffer-on-remove 'kill-weak)
     (persp-add buffer-predicate nil)
-    (persp-auto-save-opt 1)
+    (persp-auto-save-opt 0)
     (persp-auto-save-persp-name "main")
     (persp-save-dir (expand-file-name "persp-confs/" user-emacs-directory))
     (persp-modestring-use-layouts-name t)
