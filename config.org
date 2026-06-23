@@ -1350,6 +1350,25 @@ CMake:      just build"
       "gN"  '(forge-list-notifications          :wk "notifications")
       "gB"  '(forge-browse                      :wk "browse repo")
 
+      ;; Goto
+      "G"   '(:ignore true                         :wk "goto")
+      "Gd"  '(lsp-find-definition               :wk "goto definition")
+      "GD"  '(lsp-find-declaration              :wk "goto declaration")
+      "Gi"  '(lsp-find-implementation           :wk "goto implementation")
+      "Gr"  '(lsp-find-references               :wk "goto references")
+      "Gh"  '(lsp-describe-thing-at-point       :wk "hover docs")
+      "Gl"  '(flycheck-list-errors              :wk "line diagnostics")
+      "G["  '(flycheck-previous-error           :wk "prev diagnostic")
+      "G]"  '(flycheck-next-error               :wk "next diagnostic")
+      "GO"  '(consult-imenu                     :wk "outline")
+      "Gu"  '(undo-tree-visualize               :wk "undo tree")
+      "Gx"  '(browse-url-at-point               :wk "open url")
+      "Gc"  '(evil-commentary                   :wk "toggle comment")
+      "Gs"  '(:ignore t                         :wk "surround")
+      "Gss" '(evil-surround-edit                :wk "add surround")
+      "Gsd" '(evil-surround-delete              :wk "delete surround")
+      "Gsc" '(evil-surround-change              :wk "change surround")
+
       ;; LSP
       "l"   '(:ignore true                         :wk "lsp")
       "ld"  '(lsp-find-definition               :wk "find definition")
@@ -1489,29 +1508,5 @@ CMake:      just build"
       "C-<left>"  '(windmove-left               :wk "move left")
       "C-<right>" '(windmove-right              :wk "move right")
       "C-<down>"  '(windmove-down               :wk "move down")
-      "C-<up>"    '(windmove-up                 :wk "move up"))
-
-    ;; LazyVim-style g prefix menu
-    (general-create-definer my-g-prefix
-      :states '(normal visual)
-      :keymaps 'override
-      :prefix "g")
-
-    (my-g-prefix
-      "d"  '(lsp-find-definition                :wk "goto definition")
-      "D"  '(lsp-find-declaration               :wk "goto declaration")
-      "i"  '(lsp-find-implementation            :wk "goto implementation")
-      "r"  '(lsp-find-references                :wk "goto references")
-      "h"  '(lsp-describe-thing-at-point        :wk "hover docs")
-      "l"  '(flycheck-list-errors               :wk "line diagnostics")
-      "["  '(flycheck-previous-error            :wk "prev diagnostic")
-      "]"  '(flycheck-next-error                :wk "next diagnostic")
-      "O"  '(consult-imenu                      :wk "outline")
-      "u"  '(undo-tree-visualize                :wk "undo tree")
-      "x"  '(browse-url-at-point                :wk "open url")
-      "c"  '(evil-commentary                    :wk "toggle comment")
-      "s"  '(:ignore t                          :wk "surround")
-      "ss" '(evil-surround-edit                 :wk "add surround")
-      "sd" '(evil-surround-delete               :wk "delete surround")
-      "sc" '(evil-surround-change               :wk "change surround")))
+      "C-<up>"    '(windmove-up                 :wk "move up")))
 #+end_src
