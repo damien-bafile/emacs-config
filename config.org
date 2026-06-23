@@ -1375,17 +1375,6 @@ CMake:      just build"
       "Gsd" '(evil-surround-delete              :wk "delete surround")
       "Gsc" '(evil-surround-change              :wk "change surround")
 
-      ;; LSP
-      "l"   '(:ignore true                         :wk "lsp")
-      "ld"  '(lsp-find-definition               :wk "find definition")
-      "lD"  '(lsp-find-declaration              :wk "find declaration")
-      "lr"  '(lsp-find-references               :wk "find references")
-      "ln"  '(lsp-rename                        :wk "rename")
-      "la"  '(lsp-execute-code-action           :wk "code action")
-      "lf"  '(lsp-format-buffer                 :wk "format")
-      "lh"  '(lsp-describe-thing-at-point       :wk "hover docs")
-      "lR"  '(lsp-workspace-restart             :wk "restart lsp")
-
       ;; Errors (flycheck)
       "e"   '(:ignore true                         :wk "errors")
       "el"  '(flycheck-list-errors              :wk "list errors")
@@ -1494,6 +1483,7 @@ CMake:      just build"
       "Ep"  '(straight-pull-all                 :wk "pull all packages")
       "Er"  '(straight-rebuild-all              :wk "rebuild all packages")
       "ER"  '(my/reload-config                   :wk "reload config") ;
+      "El"  '(lsp-workspace-restart             :wk "restart lsp")
 
       ;; Help
       "h"   '(:ignore true                         :wk "help")
