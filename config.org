@@ -237,6 +237,7 @@
   :custom
   (which-key-idle-delay 0.3)
   :config
+  (which-key-setup-evil)
   (which-key-mode enable-mode))
 
 #+end_src
