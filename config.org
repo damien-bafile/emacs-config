@@ -798,6 +798,13 @@
   (dired-dwim-target true)
   :config
   (setq insert-directory-program "ls")
+  (defun my/dired-yank-path ()
+    "Copy absolute path of file at point to kill-ring."
+    (interactive)
+    (let* ((file (dired-get-filename nil t)))
+      (unless file (user-error "No file at point"))
+      (kill-new file)
+      (message "Yanked: %s" file)))
   (defun my/dired-paste-from-kill ()
     "Copy the file/directory path from kill-ring to current dired directory."
     (interactive)
@@ -813,7 +820,7 @@
   (evil-define-key 'normal dired-mode-map
     "h" #'dired-up-directory
     "l" #'dired-find-file
-    "yy" #'dired-copy-filename-as-kill
+    "yy" #'my/dired-yank-path
     "pp" #'my/dired-paste-from-kill)
   :bind (:map dired-mode-map
               ("C-j" . dired-next-line)
