@@ -56,3 +56,9 @@ authinfo.gpg
 .dap-breakpoints
 /.local
 projects
+
+# Tab session state
+tabsession.el
+
+# EMMS music player data
+emms/
