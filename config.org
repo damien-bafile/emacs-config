@@ -3,18 +3,17 @@
 ;;; config.el --- Emacs configuration -*- lexical-binding: t -*-
 #+end_src
 
-* Mode Variables
-#+begin_src emacs-lisp
-(setq enable-mode 1
-      disable-mode 0
-      true t
-      false nil)
-#+end_src
-
 * Package Management
 #+begin_src emacs-lisp
 (straight-use-package 'use-package)
-(setq straight-use-package-by-default true)
+(setq straight-use-package-by-default t)
+#+end_src
+
+* Paths
+#+begin_src emacs-lisp
+(when-let ((cargo-bin (expand-file-name ".cargo/bin" (getenv "HOME"))))
+  (when (file-directory-p cargo-bin)
+    (add-to-list 'exec-path cargo-bin)))
 #+end_src
 
 * Server
@@ -39,14 +38,14 @@
 #+begin_src emacs-lisp
 (use-package editorconfig
   :config
-  (editorconfig-mode enable-mode))
+  (editorconfig-mode 1))
 #+end_src
 
 * Envrc
 #+begin_src emacs-lisp
 (use-package envrc
   :config
-  (envrc-global-mode enable-mode))
+  (envrc-global-mode 1))
 #+end_src
 
 * Theme
@@ -58,12 +57,12 @@
 
 * Font
 #+begin_src emacs-lisp
-(set-face-attribute 'default false
+(set-face-attribute 'default nil
                     :family "FiraCode Nerd Font"
                     :height 120
                     :weight 'normal)
 
-(set-face-attribute 'fixed-pitch false
+(set-face-attribute 'fixed-pitch nil
                     :family "FiraCode Nerd Font")
 
 #+end_src
@@ -80,18 +79,18 @@
   :custom
   (doom-modeline-height 25)
   (doom-modeline-bar-width 4)
-  (doom-modeline-icon true)
-  (doom-modeline-major-mode-icon true)
+  (doom-modeline-icon t)
+  (doom-modeline-major-mode-icon t)
   (doom-modeline-buffer-file-name-style 'truncate-upto-project)
   (doom-modeline-vcs-max-length 24))
 #+end_src
 
 * UI
 #+begin_src emacs-lisp
-(tool-bar-mode     disable-mode)
-(scroll-bar-mode   disable-mode)
-(menu-bar-mode     disable-mode)
-(blink-cursor-mode disable-mode)
+(tool-bar-mode     0)
+(scroll-bar-mode   0)
+(menu-bar-mode     0)
+(blink-cursor-mode 0)
 #+end_src
 
 * Golden Ratio
@@ -99,16 +98,18 @@
 (use-package golden-ratio
   :straight t
   :custom
-  (golden-ratio-auto-scale true)
+  (golden-ratio-auto-scale t)
+  (golden-ratio-inhibit-functions '(minibufferp
+                                     which-key--popup-showing-p))
   :config
   (golden-ratio-mode 1))
 #+end_src
 
 * Visual
 #+begin_src emacs-lisp
-(winner-mode enable-mode)
+(winner-mode 1)
 
-(electric-pair-mode enable-mode)
+(electric-pair-mode 1)
 
 (use-package display-line-numbers
   :straight nil
@@ -116,7 +117,7 @@
          (org-mode  . display-line-numbers-mode))
   :custom
   (display-line-numbers-type 'relative)
-  (display-line-numbers-width-start true))
+  (display-line-numbers-width-start t))
 
 (use-package rainbow-delimiters
   :hook ((emacs-lisp-mode . rainbow-delimiters-mode)
@@ -128,29 +129,31 @@
   (beacon-size 20)
   (beacon-blink-duration 0.3)
   :config
-  (beacon-mode enable-mode))
+  (beacon-mode 1))
 #+end_src
 
 * Evil Mode
 #+begin_src emacs-lisp
 (use-package evil
   :init
-  (setq evil-want-integration true
-        evil-want-keybinding false
-        evil-want-C-u-scroll true)
+  (setq evil-want-integration t
+        evil-want-keybinding nil
+        evil-want-C-u-scroll t)
   :config
-  (evil-mode enable-mode))
+  (evil-mode 1))
 
 (use-package evil-collection
   :straight t
   :after evil
   :config
+  (setq evil-collection-mode-list
+        (delq 'cider evil-collection-mode-list))
   (evil-collection-init))
 
 (use-package evil-surround
   :after evil
   :config
-  (global-evil-surround-mode enable-mode))
+  (global-evil-surround-mode 1))
 
 (use-package evil-commentary
   :straight t
@@ -161,9 +164,9 @@
 (use-package undo-tree
   :after evil
   :custom
-  (undo-tree-auto-save-history false)
+  (undo-tree-auto-save-history nil)
   :config
-  (global-undo-tree-mode enable-mode)
+  (global-undo-tree-mode 1)
   (evil-set-undo-system 'undo-tree))
 #+end_src
 
@@ -171,7 +174,7 @@
 #+begin_src emacs-lisp
 (use-package yasnippet
   :config
-  (yas-global-mode enable-mode))
+  (yas-global-mode 1))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -198,7 +201,7 @@
 #+begin_src emacs-lisp
 (use-package treesit-auto
   :custom
-  (treesit-auto-install 'prompt)
+  (treesit-auto-install t)
   :config
   (global-treesit-auto-mode))
 #+end_src
@@ -207,11 +210,13 @@
 #+begin_src emacs-lisp
 (use-package vertico
   :config
-  (vertico-mode enable-mode)
+  (vertico-mode 1)
   (define-key vertico-map (kbd "C-j") #'vertico-next)
   (define-key vertico-map (kbd "C-k") #'vertico-previous)
   (define-key vertico-map (kbd "C-h") #'vertico-directory-up)
   (define-key vertico-map (kbd "C-l") #'vertico-insert))
+
+(setq vertico-sort-function nil)
 
 (use-package orderless
   :custom
@@ -223,12 +228,12 @@
 
 (use-package marginalia
   :config
-  (marginalia-mode enable-mode))
+  (marginalia-mode 1))
 
 (use-package consult-org-roam
   :after org-roam
   :config
-  (consult-org-roam-mode enable-mode))
+  (consult-org-roam-mode 1))
 #+end_src
 
 * Which Key
@@ -237,7 +242,7 @@
   :custom
   (which-key-idle-delay 0.3)
   :config
-  (which-key-mode enable-mode))
+  (which-key-mode 1))
 
 #+end_src
 
@@ -259,7 +264,7 @@
   (projectile-known-projects-file
    (expand-file-name "projectile-bookmarks.eld" user-emacs-directory))
   :config
-  (projectile-mode enable-mode))
+  (projectile-mode 1))
 
 (use-package consult-projectile
   :after (consult projectile)
@@ -484,11 +489,11 @@
   (use-package dashboard
     :after projectile
     :custom
-    (dashboard-center-content           true)
-    (dashboard-show-shortcuts           false)
-    (dashboard-set-heading-icons        true)
-    (dashboard-set-file-icons           true)
-    (dashboard-display-icons-p          true)
+    (dashboard-center-content           t)
+    (dashboard-show-shortcuts           nil)
+    (dashboard-set-heading-icons        t)
+    (dashboard-set-file-icons           t)
+    (dashboard-display-icons-p          t)
     (dashboard-icon-type                'nerd-icons)
     (dashboard-items                    '((recents  . 5)
                                            (projects . 5)
@@ -541,7 +546,7 @@
          (rust-ts-mode   . lsp)
          (lsp-mode       . lsp-enable-which-key-integration))
   :custom
-  (lsp-prefer-flymake false)
+  (lsp-prefer-flymake nil)
   (lsp-diagnostics-provider :flycheck)
   (lsp-clangd-binary-path (executable-find "clangd"))
   :config
@@ -562,11 +567,26 @@
 (use-package lsp-ui
   :after lsp-mode
   :custom
-  (lsp-ui-doc-enable true)
+  (lsp-ui-doc-enable t)
   (lsp-ui-doc-position 'at-point)
-  (lsp-ui-sideline-enable true)
-  (lsp-ui-sideline-show-diagnostics true)
-  (lsp-ui-sideline-show-code-actions true))
+  (lsp-ui-sideline-enable t)
+  (lsp-ui-sideline-show-diagnostics t)
+  (lsp-ui-sideline-show-code-actions t))
+
+;; lsp-flycheck compat for older lsp-mode versions
+(with-eval-after-load 'flycheck
+  (when (not (flycheck-error-level-p 'lsp-flycheck-warning-unnecessary))
+    (defface lsp-flycheck-warning-unnecessary
+      '((t :inherit warning))
+      "Face for unnecessary warnings (older lsp-mode compat)."
+      :group 'lsp-faces)
+    (flycheck-define-error-level 'lsp-flycheck-warning-unnecessary
+      :severity 0
+      :overlay-category 'flycheck-warning-overlay
+      :fringe-bitmap 'questionmark
+      :fringe-face 'lsp-flycheck-warning-unnecessary
+      :error-list-face 'lsp-flycheck-warning-unnecessary
+      :compilation-level 2)))
 #+end_src
 
 * Rust
@@ -598,7 +618,7 @@
 (use-package dap-mode
   :after lsp-mode
   :config
-  (dap-auto-configure-mode enable-mode)
+  (dap-auto-configure-mode 1)
   ;; C/C++ debug adapter
   (when (executable-find "lldb-vscode")
     (unless (file-exists-p (dap-gdb-lldb--extension-path "lldb"))
@@ -644,7 +664,7 @@
 
 (dolist (hook '(c-mode-hook c++-mode-hook c-ts-mode-hook c++-ts-mode-hook))
   (add-hook hook (lambda ()
-                   (add-hook 'before-save-hook #'clang-format-buffer false true))))
+                   (add-hook 'before-save-hook #'clang-format-buffer nil t))))
 #+end_src
 
 * php
@@ -656,7 +676,7 @@
 
 (add-hook 'php-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
 
 (use-package web-mode
   :mode "\\.phtml\\'"
@@ -668,18 +688,18 @@
 #+begin_src emacs-lisp
 (add-hook 'python-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
 
 (add-hook 'python-ts-mode-hook
           (lambda ()
-            (add-hook 'before-save-hook #'lsp-format-buffer false true)))
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
 #+end_src
 
 * Makefile
 #+begin_src emacs-lisp
 (add-hook 'makefile-mode-hook
           (lambda ()
-            (setq indent-tabs-mode true)))
+            (setq indent-tabs-mode t)))
 #+end_src
 
 * CMake
@@ -702,7 +722,7 @@
   :hook (arduino-mode . arduino-cli-mode)
   :custom
   (arduino-cli-warnings 'all)
-  (arduino-cli-verify true))
+  (arduino-cli-verify t))
 #+end_src
 
 * PlatformIO
@@ -724,12 +744,12 @@
                               (let ((cdb (expand-file-name "build/compile_commands.json" root))
                                     (target (expand-file-name "compile_commands.json" root)))
                                 (when (file-exists-p cdb)
-                                  (condition-case false
+                                  (condition-case nil
                                       (progn
                                         (make-symbolic-link cdb target 'ok-if-already-exists)
-                                        (lsp-workspace-restart false))
-                                    (error false))))))
-                          false true)))))
+                                        (lsp-workspace-restart nil))
+                                    (error nil))))))
+                          nil t)))))
 #+end_src
 
 * ESP-IDF
@@ -773,11 +793,11 @@
                           (target (expand-file-name "compile_commands.json" root)))
                       (when (and (string-match-p "finished" msg)
                                  (file-exists-p cdb))
-                        (condition-case false
+                        (condition-case nil
                             (make-symbolic-link cdb target 'ok-if-already-exists)
-                          (error false))
-                        (ignore-errors (lsp-workspace-restart false))))))
-                false true)))
+                          (error nil))
+                        (ignore-errors (lsp-workspace-restart nil))))))
+                nil t)))
 
   (defun espidf-conditionally-enable ()
     (when-let ((root (projectile-project-root)))
@@ -785,7 +805,7 @@
                  (with-temp-buffer
                    (insert-file-contents (expand-file-name "CMakeLists.txt" root))
                    (goto-char (point-min))
-                   (search-forward "project.cmake" false true)))
+                   (search-forward "project.cmake" nil t)))
         (espidf-mode 1))))
 
   :hook (c-mode-common-hook . espidf-conditionally-enable))
@@ -797,7 +817,7 @@
   :straight nil
   :custom
   (dired-listing-switches "-alh --group-directories-first")
-  (dired-dwim-target true)
+  (dired-dwim-target t)
   :config
   (setq insert-directory-program "ls")
   (evil-define-key 'normal dired-mode-map
@@ -821,6 +841,7 @@
     (setq ibuffer-saved-filter-groups
           '(("default"
              ("Org"      (mode . org-mode))
+             ("Clojure"  (mode . clojure-mode))
              ("C/C++"    (or (mode . c-mode)
                              (mode . c++-mode)
                              (mode . c-ts-mode)
@@ -846,7 +867,7 @@
 (use-package eat
   :if (my/windows-p)
   :custom
-  (eat-kill-buffer-on-exit true)
+  (eat-kill-buffer-on-exit t)
   :config
   (eat-eshell-mode))
 
@@ -1036,7 +1057,7 @@
     (forge-alist '(("github.com" "github.com/api/v3" "github.com" forge-github-repository)))
     (forge-owned-accounts '(("github.com" "damien-bafile")))
     (forge-database-file (expand-file-name "forge-database.sqlite" user-emacs-directory))
-    (forge-add-default-bindings false))
+    (forge-add-default-bindings nil))
 #+end_src
 
 * Email
@@ -1051,17 +1072,17 @@
         mu4e-mu-binary (executable-find "mu")
         mu4e-get-mail-command "mbsync -a"
         mu4e-update-interval 300
-        mu4e-headers-skip-duplicates true
-        mu4e-change-filenames-when-moving true
+        mu4e-headers-skip-duplicates t
+        mu4e-change-filenames-when-moving t
         mu4e-attachment-dir "~/Downloads"
-        mu4e-compose-signature-auto-include false
-        mu4e-confirm-quit false
+        mu4e-compose-signature-auto-include nil
+        mu4e-confirm-quit nil
         mu4e-context-policy 'pick-first
         mu4e-compose-context-policy 'always-ask
-        message-kill-buffer-on-exit true
+        message-kill-buffer-on-exit t
         mail-user-agent 'mu4e-user-agent
         sendmail-program (executable-find "msmtp")
-        message-sendmail-f-is-evil true
+        message-sendmail-f-is-evil t
         message-sendmail-extra-arguments '("--read-envelope-from")
         message-send-mail-function 'message-send-mail-with-sendmail
         send-mail-function 'message-send-mail-with-sendmail)
@@ -1081,10 +1102,10 @@
 
 (defun dashboard-insert-mu4e-mail (_list-size)
   "Insert mu4e inbox unread count into the dashboard."
-  (let ((count (condition-case false
+  (let ((count (condition-case nil
                    (let ((default-directory "~/.local/share/mail"))
                      (with-temp-buffer
-                       (call-process "mu" false true false
+                       (call-process "mu" nil t nil
                                      "find" "maildir:/gmail/INBOX" "flag:unread")
                        (count-lines (point-min) (point-max))))
                  (error "?"))))
@@ -1106,7 +1127,8 @@
 Rust:     cargo run
 PlatformIO: just deploy
 Python/uv:  prompt for uv run command
-CMake:      just run"
+CMake:      just run
+Leiningen: lein run"
   (interactive)
   (let ((root (projectile-project-root)))
     (cond
@@ -1114,12 +1136,14 @@ CMake:      just run"
       (compile "just deploy"))
      ((and root (file-exists-p (expand-file-name "Cargo.toml" root)))
       (compile "cargo run"))
+     ((and root (file-exists-p (expand-file-name "project.clj" root)))
+      (compile "lein run"))
      ((and root (file-exists-p (expand-file-name "uv.lock" root)))
       (compile (read-shell-command "Run: " "uv run python main.py")))
      ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
       (compile "just run"))
      (t
-      (projectile-compile-project)))))
+      (projectile-compile-project nil)))))
 
 (defun my/project-build ()
   "Build the current project based on its type.
@@ -1139,7 +1163,7 @@ CMake:      just build"
      ((and root (file-exists-p (expand-file-name "CMakeLists.txt" root)))
       (compile "just build"))
      (t
-      (projectile-compile-project)))))
+      (projectile-compile-project nil)))))
 
 (defun my/reload-config ()
   "Reload literate config.org."
@@ -1155,8 +1179,8 @@ CMake:      just build"
   :straight t
   :commands (ement-connect)
   :custom
-  (ement-save-sessions true)
-  (ement-auto-sync true)
+  (ement-save-sessions t)
+  (ement-auto-sync t)
   (ement-room-send-message-filter 'ement-room-send-org-filter))
 #+end_src
 
@@ -1171,7 +1195,7 @@ CMake:      just build"
     (org-default-notes-file "~/org/inbox.org")
     (org-agenda-files '("~/org"))
     (org-log-done 'time)
-    (org-src-fontify-natively true)
+    (org-src-fontify-natively t)
     (org-todo-keywords
      '((sequence "TODO(true)" "IN-PROGRESS(i)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
     (org-todo-keyword-faces
@@ -1197,7 +1221,7 @@ CMake:      just build"
     :custom
     (org-download-method 'directory)
     (org-download-image-dir "~/org/images")
-    (org-download-heading-lvl false))
+    (org-download-heading-lvl nil))
 #+end_src
 
 * Org Roam
@@ -1212,7 +1236,7 @@ CMake:      just build"
       :target (file+head "%<%Y-%m-%d>.org"
                          "#+title: %<%Y-%m-%d>\n"))))
   :config
-  (org-roam-db-autosync-mode enable-mode))
+  (org-roam-db-autosync-mode 1))
 #+end_src
 
 * ws-butler
@@ -1226,7 +1250,7 @@ CMake:      just build"
 (use-package recentf
   :straight nil
   :config
-  (recentf-mode enable-mode)
+  (recentf-mode 1)
   :custom
   (recentf-max-saved-items 100)
   (recentf-max-menu-items 15))
@@ -1234,15 +1258,15 @@ CMake:      just build"
 (use-package savehist
   :straight nil
   :config
-  (savehist-mode enable-mode))
+  (savehist-mode 1))
 
 (use-package saveplace
   :straight nil
   :config
-  (save-place-mode enable-mode))
+  (save-place-mode 1))
 
-(global-auto-revert-mode enable-mode)
-(column-number-mode enable-mode)
+(global-auto-revert-mode 1)
+(column-number-mode 1)
 #+end_src
 
 * Nix
@@ -1269,7 +1293,7 @@ CMake:      just build"
       "SPC" '(execute-extended-command :wk "M-x")
 
       ;; Files
-      "f"   '(:ignore true                         :wk "files")
+      "f"   '(:ignore t                         :wk "files")
       "ff"  '(find-file                         :wk "find file")
       "fr"  '(consult-recent-file               :wk "recent files")
       "fs"  '(save-buffer                       :wk "save")
@@ -1279,7 +1303,7 @@ CMake:      just build"
                 (find-file user-emacs-directory)) :wk "open config dir")
 
       ;; Buffers
-      "b"   '(:ignore true                         :wk "buffers")
+      "b"   '(:ignore t                         :wk "buffers")
       "bb"  '(consult-buffer                    :wk "switch buffer")
       "bi"  '(ibuffer                           :wk "ibuffer")
       "bk"  '(kill-current-buffer                  :wk "kill buffer")
@@ -1287,19 +1311,19 @@ CMake:      just build"
       "bp"  '(previous-buffer                   :wk "prev buffer")
 
       ;; Search
-      "s"   '(:ignore true                         :wk "search")
+      "s"   '(:ignore t                         :wk "search")
       "ss"  '(consult-line                      :wk "search buffer")
       "sd"  '(consult-ripgrep                   :wk "search directory")
       "si"  '(consult-imenu                     :wk "search symbols")
 
       ;; Jump
-      "j"   '(:ignore true                         :wk "jump")
+      "j"   '(:ignore t                         :wk "jump")
       "jj"  '(avy-goto-char-timer               :wk "jump to char")
       "jl"  '(avy-goto-line                     :wk "jump to line")
       "jw"  '(avy-goto-word-0                   :wk "jump to word")
 
       ;; Windows
-      "w"   '(:ignore true                         :wk "windows")
+      "w"   '(:ignore t                         :wk "windows")
       "wv"  '(split-window-right                :wk "split vertical")
       "ws"  '(split-window-below                :wk "split horizontal")
       "wd"  '(delete-window                     :wk "close window")
@@ -1316,7 +1340,7 @@ CMake:      just build"
       "wu"  '(winner-undo                       :wk "restore windows")
 
       ;; Tabs / Workspaces (Doom-style)
-      "TAB"     '(:ignore true                               :wk "workspace")
+      "TAB"     '(:ignore t                               :wk "workspace")
       "TAB TAB" '(my/workspace-display                       :wk "display workspaces")
       "TAB n"   '(my/workspace-new                           :wk "new workspace")
       "TAB N"   '(my/workspace-new-named                     :wk "new named workspace")
@@ -1338,26 +1362,24 @@ CMake:      just build"
       "TAB r"   '(my/workspace-rename                        :wk "rename workspace")
 
       ;; Project
-      "p"   '(:ignore true                         :wk "project")
+      "p"   '(:ignore t                         :wk "project")
       "pp"  '(consult-projectile                :wk "switch project")
       "pf"  '(consult-projectile-find-file       :wk "find file")
       "pb"  '(my/project-build                    :wk "build project")
       "pr"  '(my/project-run                     :wk "run project")
       "ps"  '(consult-ripgrep                    :wk "search project")
 
-      ;; Git
-      "g"   '(:ignore true                         :wk "git")
+       ;; Git
+      "g"   '(:ignore t                         :wk "git")
+      "gC"  '(forge-list-repositories            :wk "list repos")
       "gg"  '(magit-status                      :wk "magit status")
       "gb"  '(magit-blame                       :wk "magit blame")
+      "gc"  '(magit-clone                       :wk "magit clone")
       "gl"  '(magit-log-current                 :wk "magit log")
       "gd"  '(magit-diff-working-tree           :wk "magit diff")
-      "gP"  '(forge-list-pullreqs               :wk "list pullreqs")
-      "gI"  '(forge-list-issues                 :wk "list issues")
-      "gN"  '(forge-list-notifications          :wk "notifications")
-      "gB"  '(forge-browse                      :wk "browse repo")
 
       ;; Goto
-      "G"   '(:ignore true                         :wk "goto")
+      "G"   '(:ignore t                         :wk "goto")
       "Gd"  '(lsp-find-definition               :wk "goto definition")
       "GD"  '(lsp-find-declaration              :wk "goto declaration")
       "Gi"  '(lsp-find-implementation           :wk "goto implementation")
@@ -1376,7 +1398,7 @@ CMake:      just build"
       "Gsc" '(evil-surround-change              :wk "change surround")
 
       ;; Errors (flycheck)
-      "e"   '(:ignore true                         :wk "errors")
+      "e"   '(:ignore t                         :wk "errors")
       "el"  '(flycheck-list-errors              :wk "list errors")
       "en"  '(flycheck-next-error               :wk "next error")
       "ep"  '(flycheck-previous-error           :wk "prev error")
@@ -1386,7 +1408,7 @@ CMake:      just build"
       "sT"  '(consult-todo-all                  :wk "todos everywhere")
 
       ;; Debugging
-      "d"   '(:ignore true                         :wk "debug")
+      "d"   '(:ignore t                         :wk "debug")
       "dd"  '(dap-debug                         :wk "start debug")
       "db"  '(dap-breakpoint-toggle             :wk "toggle breakpoint")
       "dc"  '(dap-continue                      :wk "continue")
@@ -1397,7 +1419,7 @@ CMake:      just build"
       "dr"  '(dap-debug-restart                 :wk "restart debug")
 
       ;; Terminal
-      "t"   '(:ignore true                         :wk "terminal")
+      "t"   '(:ignore t                         :wk "terminal")
       "tt"  '(popper-toggle                     :wk "toggle popup")
       "tb"  '(my/terminal-bottom                :wk "terminal bottom")
       "tl"  '(my/terminal-left                  :wk "terminal left")
@@ -1406,7 +1428,7 @@ CMake:      just build"
       "tp"  '(my/terminal-project               :wk "terminal project")
 
       ;; Org
-      "o"   '(:ignore true                         :wk "org")
+      "o"   '(:ignore t                         :wk "org")
       "oa"  '(org-agenda                        :wk "agenda")
       "oc"  '(org-capture                       :wk "capture")
       "ot"  '(org-todo                          :wk "toggle todo")
@@ -1414,7 +1436,7 @@ CMake:      just build"
       "od"  '(org-deadline                      :wk "deadline")
 
       ;; Org Roam
-      "or"  '(:ignore true                         :wk "roam")
+      "or"  '(:ignore t                         :wk "roam")
       "orf" '(consult-org-roam-file-find         :wk "find node")
       "ori" '(org-roam-node-insert              :wk "insert link")
       "orb" '(org-roam-buffer-toggle            :wk "backlinks")
@@ -1424,17 +1446,17 @@ CMake:      just build"
       "orc" '(org-roam-dailies-capture-today    :wk "capture to journal")
 
       ;; Mail
-      "m"   '(:ignore true                         :wk "mail")
+      "m"   '(:ignore t                         :wk "mail")
       "mm"  '(mu4e                              :wk "mu4e")
       "mu"  '(mu4e-update-mail-and-index        :wk "sync mail")
       "mc"  '(mu4e-compose-new                  :wk "compose")
 
       ;; Matrix
-      "C"   '(:ignore true                         :wk "matrix")
+      "C"   '(:ignore t                         :wk "matrix")
       "Cm"  '(ement-connect                     :wk "connect")
 
       ;; Media
-      "M"   '(:ignore true                         :wk "media")
+      "M"   '(:ignore t                         :wk "media")
       "Mm"  '(emms                              :wk "emms")
       "Mp"  '(emms-pause                        :wk "play/pause")
       "Mn"  '(emms-next                         :wk "next")
@@ -1444,14 +1466,14 @@ CMake:      just build"
       "Mc"  '(podcaster                         :wk "podcaster")
 
       ;; Arduino
-      "A"   '(:ignore true                         :wk "arduino")
+      "A"   '(:ignore t                         :wk "arduino")
       "Ac"  '(arduino-cli-compile               :wk "compile")
       "Au"  '(arduino-cli-upload                :wk "upload")
       "Am"  '(arduino-cli-compile-and-upload    :wk "compile & upload")
       "As"  '(arduino-cli-serial-monitor        :wk "serial monitor")
 
       ;; PlatformIO
-      "P"   '(:ignore true                         :wk "platformio")
+      "P"   '(:ignore t                         :wk "platformio")
       "Pb"  '(platformio-build                  :wk "build")
       "Pu"  '(platformio-upload                 :wk "upload")
       "Pm"  '(platformio-device-monitor         :wk "serial monitor")
@@ -1460,7 +1482,7 @@ CMake:      just build"
       "Pl"  '(platformio-boards                 :wk "list boards")
 
       ;; ESP-IDF
-      "I"   '(:ignore true                         :wk "espidf")
+      "I"   '(:ignore t                         :wk "espidf")
       "Ib"  '(espidf-build                      :wk "build")
       "Iu"  '(espidf-flash                      :wk "flash")
       "Im"  '(espidf-monitor                    :wk "monitor")
@@ -1469,16 +1491,34 @@ CMake:      just build"
       "Ir"  '(espidf-reconfigure                :wk "reconfigure")
 
       ;; IRC
-      "i"   '(:ignore true                         :wk "irc")
+      "i"   '(:ignore t                         :wk "irc")
       "ii"  '(erc                                 :wk "connect")
       "it"  '(my/erc-tls                          :wk "connect TLS")
       "ij"  '(my/erc-join                         :wk "join channel")
       "iq"  '(erc-quit-server                     :wk "quit")
       "ir"  '(erc-reconnect                       :wk "reconnect")
 
+      ;; Clojure
+      "c"   '(:ignore t                           :wk "clojure")
+      "cc"  '(cider-jack-in                     :wk "jack in")
+      "cC"  '(cider-jack-in-clj&cljs            :wk "jack in clj+cljs")
+      "cq"  '(cider-quit                        :wk "quit repl")
+      "cQ"  '(cider-restart                     :wk "restart repl")
+      "ce"  '(cider-eval-last-sexp              :wk "eval expr")
+      "cE"  '(cider-eval-last-sexp-and-replace  :wk "eval and replace")
+      "cb"  '(cider-eval-buffer                 :wk "eval buffer")
+      "cr"  '(cider-eval-region                 :wk "eval region")
+      "cR"  '(cider-eval-defun-at-point         :wk "eval defun")
+      "ct"  '(cider-test-run-ns-tests           :wk "test ns")
+      "cT"  '(cider-test-run-test               :wk "test at point")
+      "cl"  '(cider-load-file                   :wk "load file")
+      "c."  '(cider-doc                         :wk "lookup doc")
+      "c,"  '(cider-javadoc                     :wk "lookup api")
+      "c/"  '(cider-apropos                     :wk "apropos")
+
       ;; Emacs
-      "E"   '(:ignore true                         :wk "emacs")
-      "Ec"  '(:ignore true                         :wk "clear")
+      "E"   '(:ignore t                         :wk "emacs")
+      "Ec"  '(:ignore t                         :wk "clear")
       "Ecm" '(erase-messages                      :wk "clear messages")
       "Ep"  '(straight-pull-all                 :wk "pull all packages")
       "Er"  '(straight-rebuild-all              :wk "rebuild all packages")
@@ -1486,14 +1526,14 @@ CMake:      just build"
       "El"  '(lsp-workspace-restart             :wk "restart lsp")
 
       ;; Help
-      "h"   '(:ignore true                         :wk "help")
+      "h"   '(:ignore t                         :wk "help")
       "hf"  '(describe-function                 :wk "describe function")
       "hk"  '(describe-key                      :wk "describe key")
       "hv"  '(describe-variable                 :wk "describe variable")
       "hm"  '(describe-mode                     :wk "describe mode")
 
       ;; Quit
-      "q"   '(:ignore true                         :wk "quit")
+      "q"   '(:ignore t                         :wk "quit")
       "qq"  '(my/delete-frame-or-kill-emacs     :wk "quit")
       "qr"  '(restart-emacs                     :wk "restart emacs")))
 
@@ -1511,4 +1551,39 @@ CMake:      just build"
       :states '(normal visual)
       :keymaps 'override
       "?"  '(which-key-show-major-mode              :wk "show major mode keys"))
+
+    ;; Forge commands (only in magit-mode-map to avoid transient errors outside repos)
+    (general-def
+      :states '(normal visual motion emacs)
+      :keymaps 'magit-mode-map
+      :prefix "SPC"
+      "gP"  '(forge-pull                         :wk "forge pull")
+      "gI"  '(forge-list-issues                  :wk "list issues")
+      "gN"  '(forge-list-notifications           :wk "notifications")
+      "gB"  '(forge-browse                       :wk "browse repo"))
+#+end_src
+
+* Clojure
+#+begin_src emacs-lisp
+(use-package clojure-mode
+  :mode ("\\.clj\\'"  . clojure-mode)
+  :mode ("\\.cljs\\'" . clojure-mode)
+  :mode ("\\.cljc\\'" . clojure-mode)
+  :mode ("\\.edn\\'"  . clojure-mode)
+  :hook ((clojure-mode . lsp-deferred)
+         (clojure-mode . rainbow-delimiters-mode)))
+
+(use-package paredit
+  :hook (clojure-mode . paredit-mode))
+
+(use-package cider
+  :defer t
+  :hook ((cider-mode . company-mode)
+         (cider-repl-mode . company-mode))
+  :custom
+  (cider-repl-display-help-banner nil)
+  (cider-repl-result-prefix "=> ")
+  (cider-repl-use-clojure-font-lock t)
+  (cider-show-evaluation-spinner nil)
+  (cider-font-lock-dynamically '(macro core defined var-fallback)))
 #+end_src
