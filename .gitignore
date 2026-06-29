@@ -62,3 +62,5 @@ tabsession.el
 
 # EMMS music player data
 emms/
+/.extension/vscode/xdebug.php-debug
+/url/cache/daimyo/http/com/google/www
