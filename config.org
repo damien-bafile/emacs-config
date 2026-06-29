@@ -275,8 +275,7 @@
 * Workspaces
 #+begin_src emacs-lisp
   (use-package persp-mode
-    :after projectile
-    :hook (after-init . persp-mode)
+    :config (persp-mode +1)
     :custom
     (persp-autokill-buffer-on-remove 'kill-weak)
     (persp-add buffer-predicate nil)
@@ -295,13 +294,14 @@
   (unless (fboundp 'persp-list)
     (defun persp-list ()
       "Return a list of all perspective objects."
-      (delq nil (mapcar #'persp-get-by-name (persp-names))))) ;
+      (cl-remove-if-not #'perspective-p
+                        (mapcar #'persp-get-by-name (persp-names)))))
 
   (defun my/workspace-display ()
     "Display open workspaces in the echo area."
     (interactive)
     (let* ((names (mapcar #'persp-name (persp-list)))
-           (current (persp-name (persp-current)))
+           (current (safe-persp-name (get-current-persp)))
            (formatted (mapcar (lambda (name)
                                 (if (string= name current)
                                     (propertize (format "[%s]" name) 'face 'bold)
@@ -347,7 +347,7 @@
     "Cycle workspaces in DIRECTION (+1 forward, -1 backward)."
     (interactive "p")
     (let* ((persps (persp-list))
-           (current-index (cl-position (persp-current) :test #'eq))
+           (current-index (cl-position (get-current-persp) :test #'eq))
            (next-index (mod (+ current-index direction) (length persps))))
       (persp-switch (persp-name (nth next-index persps)))))
 
@@ -355,33 +355,33 @@
     "Kill the current workspace (switch to first if last)."
     (interactive)
     (when (> (length (persp-list)) 1)
-      (persp-kill (persp-name (persp-current)))))
+      (persp-kill (safe-persp-name (get-current-persp)))))
 
   (defun my/workspace-rename ()
     "Rename the current workspace."
     (interactive)
-    (let ((new-name (read-string "New name: " (persp-name (persp-current)))))
-      (persp-rename new-name (persp-current))
+    (let ((new-name (read-string "New name: " (safe-persp-name (get-current-persp)))))
+      (persp-rename new-name (get-current-persp))
       (my/workspace-display)))
 
   (defun my/workspace-move-buffer-left ()
     "Move current buffer to the previous workspace."
     (interactive)
     (let* ((persps (persp-list))
-           (current-index (cl-position (persp-current) :test #'eq))
+           (current-index (cl-position (get-current-persp) :test #'eq))
            (target-index (mod (1- current-index) (length persps)))
            (target (nth target-index persps)))
-      (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+      (persp-remove-buffer (current-buffer) (get-current-persp) nil nil)
       (persp-add-buffer (current-buffer) target nil nil)))
 
   (defun my/workspace-move-buffer-right ()
     "Move current buffer to the next workspace."
     (interactive)
     (let* ((persps (persp-list))
-           (current-index (cl-position (persp-current) :test #'eq))
+           (current-index (cl-position (get-current-persp) :test #'eq))
            (target-index (mod (1+ current-index) (length persps)))
            (target (nth target-index persps)))
-      (persp-remove-buffer (current-buffer) (persp-current) nil nil)
+      (persp-remove-buffer (current-buffer) (get-current-persp) nil nil)
       (persp-add-buffer (current-buffer) target nil nil)))
 
   (defun my/workspace-save ()
@@ -908,27 +908,15 @@
 
 (defun my/terminal-left ()
   (interactive)
-  (let ((mode (if (my/windows-p) 'eat-mode 'vterm-mode))
-        (cmd (if (my/windows-p) #'eat #'vterm)))
-    (let ((display-buffer-alist
-           `(((derived-mode . ,mode)
-              (display-buffer-in-side-window)
-              (side . left)
-              (window-width . 40))
-             ,@display-buffer-alist)))
-      (funcall cmd))))
+  (let ((cmd (if (my/windows-p) #'eat #'vterm)))
+    (select-window (split-window-right -40))
+    (funcall cmd)))
 
 (defun my/terminal-right ()
   (interactive)
-  (let ((mode (if (my/windows-p) 'eat-mode 'vterm-mode))
-        (cmd (if (my/windows-p) #'eat #'vterm)))
-    (let ((display-buffer-alist
-           `(((derived-mode . ,mode)
-              (display-buffer-in-side-window)
-              (side . right)
-              (window-width . 40))
-             ,@display-buffer-alist)))
-      (funcall cmd))))
+  (let ((cmd (if (my/windows-p) #'eat #'vterm)))
+    (select-window (split-window-right 40))
+    (funcall cmd)))
 
 (defun my/terminal-fullscreen ()
   (interactive)
