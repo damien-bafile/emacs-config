@@ -260,6 +260,7 @@
   (projectile-completion-system 'default)
   (projectile-project-search-path '("~/Dev/"))
   (projectile-indexing-method 'alien)
+  (projectile-git-untracked-files nil)
   (projectile-enable-caching t)
   (projectile-known-projects-file
    (expand-file-name "projectile-bookmarks.eld" user-emacs-directory))
@@ -549,6 +550,8 @@
   (lsp-prefer-flymake nil)
   (lsp-diagnostics-provider :flycheck)
   (lsp-clangd-binary-path (executable-find "clangd"))
+  (lsp-enable-on-type-formatting nil)
+  (lsp-signature-auto-activate nil)
   :config
   (add-to-list 'lsp-language-id-configuration '(arduino-mode . "cpp"))
   (when-let ((pyright (executable-find "pyright-langserver")))
