@@ -132,44 +132,6 @@
   (beacon-mode 1))
 #+end_src
 
-* Evil Mode
-#+begin_src emacs-lisp
-(use-package evil
-  :init
-  (setq evil-want-integration t
-        evil-want-keybinding nil
-        evil-want-C-u-scroll t)
-  :config
-  (evil-mode 1))
-
-(use-package evil-collection
-  :straight t
-  :after evil
-  :config
-  (setq evil-collection-mode-list
-        (delq 'cider evil-collection-mode-list))
-  (evil-collection-init))
-
-(use-package evil-surround
-  :after evil
-  :config
-  (global-evil-surround-mode 1))
-
-(use-package evil-commentary
-  :straight t
-  :after (evil org)
-  :config
-  (evil-commentary-mode))
-
-(use-package undo-tree
-  :after evil
-  :custom
-  (undo-tree-auto-save-history nil)
-  :config
-  (global-undo-tree-mode 1)
-  (evil-set-undo-system 'undo-tree))
-#+end_src
-
 * Snippets
 #+begin_src emacs-lisp
 (use-package yasnippet
@@ -238,12 +200,11 @@
 
 * Which Key
 #+begin_src emacs-lisp
-(use-package which-key
-  :custom
-  (which-key-idle-delay 0.3)
-  :config
-  (which-key-mode 1))
-
+  ;; (use-package which-key
+  ;;     :custom
+  ;;     (which-key-idle-delay 0.3)
+  ;;     :config
+  ;;     (which-key-mode 1))
 #+end_src
 
 * Avy
@@ -446,15 +407,6 @@
   :config
   (erc-modules '(sasl tracking fill button nicks replace
                  match ring stamp unread))
-  ;; Evil integration
-  (evil-set-initial-state 'erc-mode 'normal)
-  (evil-define-key 'normal erc-mode-map
-    (kbd "i")   #'erc-switch-to-input-buffer
-    (kbd "RET") #'erc-send-current-line
-    (kbd "q")   #'bury-buffer
-    (kbd "Q")   #'erc-quit-server
-    (kbd "J")   #'erc-next-channel-buffer
-    (kbd "K")   #'erc-prev-channel-buffer)
   ;; Activity tracking in mode-line
   (erc-track-mode t))
 
@@ -475,8 +427,7 @@
   (let ((input-buf (erc--get-input-buffer)))
     (when input-buf
       (switch-to-buffer input-buf)
-      (goto-char (point-max))
-      (evil-insert-state))))
+      (goto-char (point-max)))))
 
 (defun my/erc-quit-and-bury ()
   "Quit ERC and bury the buffer."
@@ -545,7 +496,7 @@
          (python-mode    . lsp)
          (python-ts-mode . lsp)
          (rust-ts-mode   . lsp)
-         (lsp-mode       . lsp-enable-which-key-integration))
+      ;; (lsp-mode       . lsp-enable-which-key-integration))
   :custom
   (lsp-prefer-flymake nil)
   (lsp-diagnostics-provider :flycheck)
@@ -561,11 +512,11 @@
       :activation-fn (lsp-activate-on "python")
       :server-id 'pyright
       :priority 1)))
-  (evil-define-key 'normal lsp-mode-map
-    (kbd "gd") #'lsp-find-definition
-    (kbd "gi") #'lsp-find-implementation
-    (kbd "gr") #'lsp-find-references
-    (kbd "gD") #'lsp-find-declaration))
+  :bind (:map lsp-mode-map
+              ("gd" . lsp-find-definition)
+              ("gi" . lsp-find-implementation)
+              ("gr" . lsp-find-references)
+              ("gD" . lsp-find-declaration)))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -600,12 +551,11 @@
 
 (use-package cargo-mode
   :hook (rust-ts-mode . cargo-minor-mode)
-  :config
-  (evil-define-key 'normal cargo-mode-map
-    (kbd "C-c C-b") #'cargo-process-build
-    (kbd "C-c C-c") #'cargo-process-check
-    (kbd "C-c C-t") #'cargo-process-test
-    (kbd "C-c C-r") #'cargo-process-run))
+  :bind (:map cargo-mode-map
+              ("C-c C-b" . cargo-process-build)
+              ("C-c C-c" . cargo-process-check)
+              ("C-c C-t" . cargo-process-test)
+              ("C-c C-r" . cargo-process-run)))
 #+end_src
 
 * Syntax Checking
@@ -823,10 +773,9 @@
   (dired-dwim-target t)
   :config
   (setq insert-directory-program "ls")
-  (evil-define-key 'normal dired-mode-map
-    "h" #'dired-up-directory
-    "l" #'dired-find-file)
   :bind (:map dired-mode-map
+              ("h" . dired-up-directory)
+              ("l" . dired-find-file)
               ("C-j" . dired-next-line)
               ("C-k" . dired-previous-line)
               ("C-h" . dired-up-directory)
@@ -982,11 +931,7 @@
   (setq emms-player-list '(emms-player-mpv)
         emms-player-mpv-command-name "mpv"
         emms-source-file-directory-tree-function
-        'emms-source-file-directory-tree-internal)
-  (evil-set-initial-state 'emms-browser-mode 'normal)
-  (evil-set-initial-state 'emms-playlist-mode 'normal)
-  (evil-set-initial-state 'emms-metaplaylist-mode 'normal)
-  (evil-set-initial-state 'emms-stream-mode 'normal))
+        'emms-source-file-directory-tree-internal))
 #+end_src
 
 * Podcasts
@@ -1275,7 +1220,6 @@ CMake:      just build"
     :config
     (general-override-mode 1)
     (general-create-definer leader-def
-      :states '(normal visual motion emacs)
       :keymaps 'override
       :prefix "SPC")
 
@@ -1323,10 +1267,10 @@ CMake:      just build"
       "wl"  '(windmove-right                    :wk "move right")
       "wj"  '(windmove-down                     :wk "move down")
       "wk"  '(windmove-up                       :wk "move up")
-      "w."  '(evil-window-increase-height      :wk "enlarge height")
-      "w,"  '(evil-window-decrease-height      :wk "shrink height")
-      "w>"  '(evil-window-increase-width       :wk "enlarge width")
-      "w<"  '(evil-window-decrease-width       :wk "shrink width")
+      "w."  '((lambda () (interactive) (enlarge-window 5))  :wk "enlarge height")
+      "w,"  '((lambda () (interactive) (shrink-window 5))   :wk "shrink height")
+      "w>"  '((lambda () (interactive) (enlarge-window 5 t)) :wk "enlarge width")
+      "w<"  '((lambda () (interactive) (shrink-window 5 t))  :wk "shrink width")
       "wD"  '(delete-other-windows              :wk "maximize")
       "wu"  '(winner-undo                       :wk "restore windows")
 
@@ -1380,13 +1324,9 @@ CMake:      just build"
       "G["  '(flycheck-previous-error           :wk "prev diagnostic")
       "G]"  '(flycheck-next-error               :wk "next diagnostic")
       "GO"  '(consult-imenu                     :wk "outline")
-      "Gu"  '(undo-tree-visualize               :wk "undo tree")
+      "Gu"  '(undo                                 :wk "undo")
       "Gx"  '(browse-url-at-point               :wk "open url")
-      "Gc"  '(evil-commentary                   :wk "toggle comment")
-      "Gs"  '(:ignore t                         :wk "surround")
-      "Gss" '(evil-surround-edit                :wk "add surround")
-      "Gsd" '(evil-surround-delete              :wk "delete surround")
-      "Gsc" '(evil-surround-change              :wk "change surround")
+      "Gc"  '(comment-line                      :wk "toggle comment")
 
       ;; Errors (flycheck)
       "e"   '(:ignore t                         :wk "errors")
@@ -1530,22 +1470,19 @@ CMake:      just build"
 
     ;; Ctrl+arrow window switching
     (general-def
-      :states '(normal visual insert emacs)
       :keymaps 'override
       "C-<left>"  '(windmove-left               :wk "move left")
       "C-<right>" '(windmove-right              :wk "move right")
       "C-<down>"  '(windmove-down               :wk "move down")
       "C-<up>"    '(windmove-up                 :wk "move up"))
 
-    ;; ? shows major mode keybindings (evil-aware via which-key)
-    (general-def
-      :states '(normal visual)
-      :keymaps 'override
-      "?"  '(which-key-show-major-mode              :wk "show major mode keys"))
+    ;; ? shows major mode keybindings
+    ;; (general-def
+    ;;   :keymaps 'override
+    ;;  "?"  '(which-key-show-major-mode              :wk "show major mode keys"))
 
     ;; Forge commands (only in magit-mode-map to avoid transient errors outside repos)
     (general-def
-      :states '(normal visual motion emacs)
       :keymaps 'magit-mode-map
       :prefix "SPC"
       "gP"  '(forge-pull                         :wk "forge pull")
