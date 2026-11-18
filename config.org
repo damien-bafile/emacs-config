@@ -17,7 +17,7 @@
 
 * Paths
 #+begin_src emacs-lisp
-(when-let ((cargo-bin (expand-file-name ".cargo/bin" (getenv "HOME"))))
+(when-let* ((cargo-bin (expand-file-name ".cargo/bin" (getenv "HOME"))))
   (when (file-directory-p cargo-bin)
     (add-to-list 'exec-path cargo-bin)))
 #+end_src
@@ -178,12 +178,13 @@
 
 * Snippets
 #+begin_src emacs-lisp
+;; Load the snippet collection first, so yasnippet finds snippets when
+;; yas-global-mode starts instead of preparing just-in-time loading.
+(use-package yasnippet-snippets)
+
 (use-package yasnippet
   :config
   (yas-global-mode 1))
-
-(use-package yasnippet-snippets
-  :after yasnippet)
 #+end_src
 
 * Completion
@@ -205,6 +206,21 @@
 
 * Tree-sitter
 #+begin_src emacs-lisp
+;; On Windows, make the MSYS2 compiler available so tree-sitter grammars
+;; can be built (treesit-auto invokes cc/gcc through exec-path). Prefer
+;; the native mingw-w64 gcc; grammars built with the msys gcc segfault
+;; Emacs on Windows. On Linux/macOS/BSD the system compiler is already on
+;; PATH, so nothing needs to be added.
+(when (memq system-type '(ms-dos windows-nt cygwin))
+  (let* ((mingw-bins '("C:/msys64/ucrt64/bin" "C:/msys64/mingw64/bin" "C:/msys64/usr/bin"))
+         (mingw-bin (seq-find
+                     (lambda (d)
+                       (file-exists-p (expand-file-name "gcc.exe" d)))
+                     mingw-bins)))
+    (when mingw-bin
+      (add-to-list 'exec-path mingw-bin)
+      (setenv "PATH" (concat mingw-bin path-separator (getenv "PATH"))))))
+
 (use-package treesit-auto
   :custom
   (treesit-auto-install t)
@@ -401,7 +417,13 @@
          (php-mode       . lsp)
          (python-mode    . lsp)
          (python-ts-mode . lsp)
-         (rust-ts-mode   . lsp))
+         (rust-ts-mode   . lsp)
+         (js-mode             . lsp)
+         (js-ts-mode          . lsp)
+         (typescript-mode     . lsp)
+         (typescript-ts-mode  . lsp)
+         (typescript-tsx-mode . lsp)
+         (tsx-ts-mode         . lsp))
   :custom
   (lsp-prefer-flymake nil)
   (lsp-diagnostics-provider :flycheck)
@@ -410,7 +432,7 @@
   (lsp-signature-auto-activate nil)
   :config
   (add-to-list 'lsp-language-id-configuration '(arduino-mode . "cpp"))
-  (when-let ((pyright (executable-find "pyright-langserver")))
+  (when-let* ((pyright (executable-find "pyright-langserver")))
     (lsp-register-client
      (make-lsp-client
       :new-connection (lsp-stdio-connection `(,pyright "--stdio"))
@@ -532,6 +554,41 @@
 
 #+end_src
 
+* JavaScript & TypeScript
+#+begin_src emacs-lisp
+;; typescript-mode provides the Elisp base mode for .ts; js-mode is
+;; built-in for .js/.jsx. treesit-auto remaps these to the built-in
+;; js-ts-mode / typescript-ts-mode once the grammars are built, with
+;; graceful fallback to the Elisp modes otherwise.
+(use-package typescript-mode
+  :mode ("\\.ts\\'" . typescript-mode))
+
+;; typescript-mode does not define a tsx variant, so pick the dedicated
+;; tsx-ts-mode ourselves when the tsx grammar is available; otherwise
+;; fall back to typescript-mode (which treesit-auto may remap).
+(defun my/tsx-mode ()
+  "Major mode for .tsx files."
+  (interactive)
+  (require 'treesit nil t)
+  (if (and (fboundp 'tsx-ts-mode)
+           (treesit-ready-p 'tsx t))
+      (tsx-ts-mode)
+    (typescript-mode)))
+(use-package typescript-mode
+  :mode ("\\.tsx\\'" . my/tsx-mode))
+
+;; Format on save via the LSP server (like php/python sections).
+(dolist (hook '(js-mode-hook
+                js-ts-mode-hook
+                typescript-mode-hook
+                typescript-ts-mode-hook
+                typescript-tsx-mode-hook
+                tsx-ts-mode-hook))
+  (add-hook hook
+            (lambda ()
+              (add-hook 'before-save-hook #'lsp-format-buffer nil t))))
+#+end_src
+
 * Python
 #+begin_src emacs-lisp
 (add-hook 'python-mode-hook
@@ -560,6 +617,19 @@
 (use-package just-mode :defer t)
 #+end_src
 
+* YAML & TOML
+#+begin_src emacs-lisp
+;; Base modes are pure Elisp font-lock. Once the yaml/toml tree-sitter
+;; grammars are built, treesit-auto transparently remaps these to the
+;; built-in yaml-ts-mode/toml-ts-mode; if a grammar is missing it stays
+;; on the Elisp mode, so this degrades gracefully.
+(use-package yaml-mode
+  :mode ("\\.ya?ml\\'" "\\.yaml\\.tmpl\\'"))
+
+(use-package toml-mode
+  :mode "\\.toml\\'")
+#+end_src
+
 * Arduino
 #+begin_src emacs-lisp
 (use-package arduino-mode
@@ -585,7 +655,7 @@
   ;; Auto-link compile_commands.json to project root after builds (clangd needs it there)
   (add-hook 'platformio-mode-hook
             (lambda ()
-              (when-let ((root (projectile-project-root)))
+              (when-let* ((root (projectile-project-root)))
                 (add-hook 'compilation-finish-functions
                           (lambda (_buf msg)
                             (when (string-match-p "finished" msg)
@@ -636,7 +706,7 @@
       (setq-local compile-command "idf.py build")
       (add-hook 'compilation-finish-functions
                 (lambda (buf msg)
-                  (when-let ((root (projectile-project-root)))
+                  (when-let* ((root (projectile-project-root)))
                     (let ((cdb (expand-file-name "build/compile_commands.json" root))
                           (target (expand-file-name "compile_commands.json" root)))
                       (when (and (string-match-p "finished" msg)
@@ -648,7 +718,7 @@
                 nil t)))
 
   (defun espidf-conditionally-enable ()
-    (when-let ((root (projectile-project-root)))
+    (when-let* ((root (projectile-project-root)))
       (when (and (file-exists-p (expand-file-name "CMakeLists.txt" root))
                  (with-temp-buffer
                    (insert-file-contents (expand-file-name "CMakeLists.txt" root))
@@ -709,8 +779,17 @@
   "Return t if running on Windows."
   (memq system-type '(ms-dos windows-nt cygwin)))
 
+;; NOTE: eat's upstream repo is on codeberg.org, which the corporate DNS
+;; blocklists. Use the GitHub mirror instead, with the full files list from
+;; eat's official straight recipe.
 (use-package eat
   :if (my/windows-p)
+  :straight (eat :type git :host github :repo "emacsmirror/eat"
+                 :files ("*.el" ("term" "term/*.el") "*.texi"
+                         "*.ti" ("terminfo/e" "terminfo/e/*")
+                         ("terminfo/65" "terminfo/65/*")
+                         ("integration" "integration/*")
+                         (:exclude ".dir-locals.el" "*-tests.el")))
   :custom
   (eat-kill-buffer-on-exit t)
   :config
