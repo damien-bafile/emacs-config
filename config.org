@@ -20,6 +20,10 @@
 (when-let* ((cargo-bin (expand-file-name ".cargo/bin" (getenv "HOME"))))
   (when (file-directory-p cargo-bin)
     (add-to-list 'exec-path cargo-bin)))
+
+(when-let* ((local-bin (expand-file-name ".local/bin" (getenv "HOME"))))
+  (when (file-directory-p local-bin)
+    (add-to-list 'exec-path local-bin)))
 #+end_src
 
 * Server
@@ -66,9 +70,8 @@
   (catppuccin-set-color 'mantle "#050507")
   (catppuccin-set-color 'crust  "#030304")
   (load-theme 'catppuccin :no-confirm)
-  ;; Strings render yellow like JSON values in the VS Code theme
-  ;; (tree-sitter string faces inherit this face)
-  (set-face-attribute 'font-lock-string-face nil :foreground "#f9e2af")
+  ;; Strings render mauve, matching the keyword accent
+  (set-face-attribute 'font-lock-string-face nil :foreground "#cba6f7")
   ;; Higher-contrast selection on the black background
   ;; Mauve selection (Catppuccin mocha accent)
   (set-face-attribute 'region nil :background "#cba6f7")
@@ -628,6 +631,138 @@
 
 (use-package toml-mode
   :mode "\\.toml\\'")
+#+end_src
+
+* Markdown & Mermaid
+#+begin_src emacs-lisp
+;; npm globals live under %APPDATA%\npm on Windows, and GUI Emacs often
+;; starts with a PATH that differs from the terminal; add it to exec-path
+;; so Emacs can find mmdc.
+(when (memq system-type '(ms-dos windows-nt cygwin))
+  (let ((npm-bin (expand-file-name "AppData/Roaming/npm" (getenv "HOME"))))
+    (when (file-directory-p npm-bin)
+      (add-to-list 'exec-path npm-bin))))
+
+;; markdown-mode provides the editing commands; treesit-auto transparently
+;; remaps .md files to the built-in markdown-ts-mode once the grammars are
+;; built, degrading gracefully to this Elisp mode otherwise.
+(use-package markdown-mode
+  :mode "\\.md\\'"
+  :custom
+  ;; Fontify fenced code blocks with their language's major mode, so
+  ;; ```mermaid blocks get mermaid-mode highlighting inside the buffer.
+  (markdown-fontify-code-blocks-natively t)
+  ;; pandoc alone only *highlights* ```mermaid blocks; the Lua filter
+  ;; rewrites them to <pre class="mermaid"> and the header file loads
+  ;; mermaid.js, so C-c C-c p renders actual diagrams in the browser.
+  (markdown-command
+   (concat (expand-file-name ".local/bin/pandoc.exe" (getenv "HOME"))
+           " --standalone"
+           " --lua-filter=" (expand-file-name "mermaid-filter.lua" user-emacs-directory)
+           " --include-in-header=" (expand-file-name "mermaid-header.html" user-emacs-directory)
+           " --include-in-header=" (expand-file-name "preview-style.html" user-emacs-directory)
+           " --metadata title=Preview"))
+  :config
+  ;; Ensure ```mermaid blocks map to mermaid-mode for native fontification
+  ;; (markdown-get-lang-mode would also find it via the "mermaid-mode"
+  ;; naming convention, this just makes it explicit).
+  (add-to-list 'markdown-code-lang-modes '("mermaid" . mermaid-mode))
+  ;; C-c C-o opens the file with the Windows default app for .md
+  ;; (markdown-open-command also accepts a string program name).
+  (setq markdown-open-command
+        (lambda ()
+          (unless buffer-file-name
+            (user-error "Current buffer is not visiting a file"))
+          (w32-shell-execute "open" buffer-file-name))))
+
+;; Standalone .mmd diagram files: syntax highlighting + C-c C-c compile
+;; via the official Mermaid CLI (npm install -g @mermaid-js/mermaid-cli).
+(use-package mermaid-mode
+  :mode "\\.mmd\\'"
+  :custom
+  (mermaid-mmdc-location (executable-find "mmdc"))
+  :config
+  ;; Consistent Catppuccin color roles for mermaid source:
+  ;;   mauve    structure keywords (flowchart, subgraph, style, end, ...)
+  ;;   blue     node/link identifiers (A, B, Canvas — what you wire and style)
+  ;;   sky      values (directions TD/TB/BT/LR/RL/DT, and `default')
+  ;;   lavender CSS property names (fill/stroke/color)
+  ;;   white    labels (quoted node text and |edge| labels) — the content
+  ;;   grey     arrows; comments keep the theme's comment face
+  ;; Every rule uses override=t to beat mermaid-mode's generic faces
+  ;; (e.g. its colon-label rule), and rules are ordered so later ones win.
+  (defface my/mermaid-id-face
+    '((t :foreground "#89b4fa"))
+    "Blue face for mermaid node/link identifiers."
+    :group 'mermaid-mode)
+  (defface my/mermaid-value-face
+    '((t :foreground "#89dceb"))
+    "Sky face for mermaid values (directions, default)."
+    :group 'mermaid-mode)
+  (defface my/mermaid-property-face
+    '((t :foreground "#b4befe"))
+    "Lavender face for CSS property names (fill/stroke/color) in mermaid style directives."
+    :group 'mermaid-mode)
+  (defface my/mermaid-label-face
+    '((t))
+    "Default-colored face for mermaid labels (quoted node text, |edge| labels)."
+    :group 'mermaid-mode)
+  (defface my/mermaid-arrow-face
+    '((t :foreground "#6c7086"))
+    "Dim grey face for mermaid arrows."
+    :group 'mermaid-mode)
+  (font-lock-add-keywords
+   'mermaid-mode
+   '(;; Identifier after style/linkStyle/subgraph
+     ("\\_<\\(?:style\\|linkStyle\\|subgraph\\)\\s-+\\(\\_<\\w+\\_>\\)"
+      1 'my/mermaid-id-face t)
+     ;; Identifier opening a line: A([.., B".., C{.., G -->
+     ("^\\s-*\\(\\_<\\w+\\_>\\)\\s-*\\(?:[\\[({\"]\\|--\\)"
+      1 'my/mermaid-id-face t)
+     ;; Identifier after an arrow, optionally past an |edge label|
+     ("\\(?:-->\\|==>\\|--\\)\\s-*\\(?:|[^|\n]*|\\)?\\s-*\\(\\_<\\w+\\_>\\)"
+      1 'my/mermaid-id-face t)
+     ;; Values: directions and default
+     ("\\_<\\(TB\\|TD\\|BT\\|LR\\|RL\\|DT\\|default\\)\\_>"
+      0 'my/mermaid-value-face t)
+     ;; Structure keywords mermaid-mode's own list omits
+     ("\\_<\\(style\\|linkStyle\\|direction\\|classDef\\)\\_>"
+      0 'font-lock-keyword-face t)
+     ;; CSS property names (fill/stroke/color)
+     ("\\_<\\(fill\\|stroke\\|color\\)\\_>:" 0 'my/mermaid-property-face t)
+     ;; Arrows, dimmed so labels and identifiers stand out
+     ("---\\|-?->*\\+?\\|==>\\|===" 0 'my/mermaid-arrow-face t)
+     ;; Labels last, so keywords inside them are overridden to plain white
+     ("|[^|\n]*|" 0 'my/mermaid-label-face t)
+     ("\"[^\"\n]*\"" 0 'my/mermaid-label-face t))))
+
+;; Preview the mermaid block under point inside a .md buffer (C-c m):
+;; renders with mmdc and shows the diagram in an Emacs buffer, themed
+;; to match the current colors.
+(use-package markdown-mermaid
+  :after markdown-mode
+  :bind (:map markdown-mode-map
+              ("C-c m" . markdown-mermaid-preview))
+  :custom
+  (markdown-mermaid-mmdc-path (executable-find "mmdc")))
+
+;; Paint a swatch behind #hex / rgb() color values so the text shows
+;; the actual color. Only in modes where colors appear as data.
+(use-package rainbow-mode
+  :hook ((markdown-mode . rainbow-mode)
+         (mermaid-mode  . rainbow-mode)
+         (css-mode      . rainbow-mode)))
+
+;; rainbow-mode's hex regexp requires a character before the # (to skip
+;; HTML entities), so mermaid values like "fill:#FFFFFF" right after a
+;; colon can be skipped. Add a guard-free matcher via rainbow's hook.
+(defun my/rainbow-hex-after-colon ()
+  (let ((keyword '(("\\(#\\(?:[0-9a-fA-F]\\{3\\}\\)\\{1,4\\}\\)\\b"
+                    (1 (rainbow-colorize-itself 1))))))
+    (if rainbow-mode
+        (font-lock-add-keywords nil keyword t)
+      (font-lock-remove-keywords nil keyword))))
+(add-hook 'rainbow-keywords-hook #'my/rainbow-hex-after-colon)
 #+end_src
 
 * Arduino

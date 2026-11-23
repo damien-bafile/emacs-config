@@ -48,6 +48,9 @@ mise.toml
 \#*\#
 .\#*
 
+# Misc caches
+.cache/
+
 # Auth / secrets
 authinfo
 authinfo.gpg
