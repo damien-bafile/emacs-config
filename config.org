@@ -13,6 +13,15 @@
 #+begin_src emacs-lisp
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
+
+(defun my/update-packages ()
+  "Pull and rebuild all straight.el packages, then advise a restart."
+  (interactive)
+  (straight-pull-all)
+  (straight-rebuild-all)
+  (message "Packages updated -- restart Emacs to finish."))
+
+(global-set-key (kbd "C-c u") #'my/update-packages)
 #+end_src
 
 * Paths
@@ -78,6 +87,14 @@
   ;; No current-line highlight; lavender cursor instead
   (global-hl-line-mode 0)
   (set-face-attribute 'cursor nil :background "#b4befe")
+  ;; Orderless/completion match highlighting: bold only, no fixed
+  ;; foreground, so matched text stays white on normal rows and dark
+  ;; on the lavender selection bar (fixed accent colors wash out on
+  ;; lavender). Matches VS Code's command-palette highlighting.
+  (dolist (face '(orderless-match-face-0 orderless-match-face-1
+                  orderless-match-face-2 orderless-match-face-3
+                  completions-common-part))
+    (set-face-attribute face nil :weight 'bold :underline nil :foreground 'unspecified))
   (with-eval-after-load 'vertico
     ;; Bold dark text on the lavender selection for high contrast
     (set-face-attribute 'vertico-current nil
