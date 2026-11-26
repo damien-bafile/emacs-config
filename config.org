@@ -91,10 +91,15 @@
   ;; foreground, so matched text stays white on normal rows and dark
   ;; on the lavender selection bar (fixed accent colors wash out on
   ;; lavender). Matches VS Code's command-palette highlighting.
-  (dolist (face '(orderless-match-face-0 orderless-match-face-1
-                  orderless-match-face-2 orderless-match-face-3
-                  completions-common-part))
-    (set-face-attribute face nil :weight 'bold :underline nil :foreground 'unspecified))
+  ;; `completions-common-part' is built in; the orderless faces only
+  ;; exist once orderless is loaded, so defer those.
+  (set-face-attribute 'completions-common-part nil
+                      :weight 'bold :underline nil :foreground 'unspecified)
+  (with-eval-after-load 'orderless
+    (dolist (face '(orderless-match-face-0 orderless-match-face-1
+                    orderless-match-face-2 orderless-match-face-3))
+      (set-face-attribute face nil :weight 'bold :underline nil
+                          :foreground 'unspecified)))
   (with-eval-after-load 'vertico
     ;; Bold dark text on the lavender selection for high contrast
     (set-face-attribute 'vertico-current nil
