@@ -787,6 +787,37 @@
 (add-hook 'rainbow-keywords-hook #'my/rainbow-hex-after-colon)
 #+end_src
 
+* SQL Server (T-SQL)
+#+begin_src emacs-lisp
+;; T-SQL editing: sql-mode with the Microsoft product, which adds the
+;; T-SQL keyword set, GO batch terminators, @variable syntax and the
+;; appropriate comments/quoting to sql-mode's syntax highlighting.
+(add-hook 'sql-mode-hook (lambda () (sql-set-product 'ms)))
+
+;; lsp-mssql drives Microsoft's sqltoolsservice (the same engine behind
+;; the VS Code MSSQL extension): server-side completion, query execution
+;; with results in *SQL Results*, and a treemacs object explorer.
+;; The server binary lives in ~/.local/bin/mssql (net10.0 build, uses the
+;; system .NET runtime).
+(use-package lsp-mssql
+  :straight (lsp-mssql :type git :host github :repo "emacs-lsp/lsp-mssql"
+                       :files (:defaults "images"))
+  :after (lsp-mode lsp-treemacs)
+  :custom
+  (lsp-mssql-download-location
+   (expand-file-name ".local/bin/mssql" (getenv "HOME")))
+  ;; Connection profiles shown by lsp-mssql-connect and the object
+  ;; explorer. Fill in the real server/database/user/password.
+  (lsp-mssql-connections
+   [(:server "localhost" :database "master" :user "SA" :password "change-me")])
+  :hook (sql-mode . lsp)
+  :bind (:map sql-mode-map
+              ("C-c l c" . lsp-mssql-connect)
+              ("C-c l b" . lsp-mssql-execute-buffer)
+              ("C-c l r" . lsp-mssql-execute-region)
+              ("C-c l o" . lsp-mssql-object-explorer)))
+#+end_src
+
 * Arduino
 #+begin_src emacs-lisp
 (use-package arduino-mode
